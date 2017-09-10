@@ -1,0 +1,11 @@
+_old/
+build/
+_refs/
+blue.png
+green.png
+red.png
+misc.png
+*.spr
+*_sdl
+tiles_bg.h
+_debug.png
