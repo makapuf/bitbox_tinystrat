@@ -4,8 +4,16 @@ _refs/
 blue.png
 green.png
 red.png
+yellow.png
 misc.png
 *.spr
 *_sdl
 tiles_bg.h
 _debug.png
+map.h
+data.h
+*.tset
+*.map
+*.bin
+*.elf
+tinystrat_defs.h

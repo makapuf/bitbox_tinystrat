@@ -16,7 +16,7 @@ data.h: $(DATAFILES)
 	mkdir -p $(@D)
 	python2 $(BITBOX)/tools/embed.py $^ > $@
 
-%.h %.tset : %.tsx
+%.h %.tset : %.tsx %.png
 	$(BITBOX)/tools/mk_tset.py $< > $*.h
 
 %.h %.map : %.tmx
@@ -28,7 +28,7 @@ data.h: $(DATAFILES)
 wars.spr : wars.png
 	$(BITBOX)/tools/mk_spr.py $< -o $@
 
-$(NAME)_defs.h blue.png red.png yellow.png green.png misc.png: tinystrat.py tiles_bg.tsx tiles_bg.png
+$(NAME)_defs.h blue.png red.png yellow.png green.png misc.png: tinystrat.py tiles_bg.tsx tiles_bg.png map.tmx
 	python tinystrat.py > $(NAME)_defs.h
 
 %.lz4 : %

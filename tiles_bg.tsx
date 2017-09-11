@@ -201,7 +201,6 @@
  <tile id="133" terrain="6,6,6,6"/>
  <tile id="134" terrain="6,6,6,6"/>
  <tile id="135" terrain="6,6,6,6"/>
- <tile id="136" type="tiny"/>
  <tile id="140" terrain="7,7,7,7"/>
  <tile id="141" terrain="7,7,7,7"/>
  <tile id="142" terrain="7,7,7,7"/>
@@ -220,6 +219,7 @@
  <tile id="157" terrain="7,7,7,7"/>
  <tile id="158" terrain="7,7,7,7"/>
  <tile id="159" terrain="7,7,7,7"/>
+ <tile id="161" type="wood"/>
  <tile id="168" type="zero"/>
  <tile id="217" type="plain"/>
  <tile id="219" type="mountains"/>
@@ -230,5 +230,14 @@
  <tile id="231" type="town"/>
  <tile id="233" type="fields"/>
  <tile id="240" type="beach"/>
+ <tile id="245" type="farmer"/>
+ <tile id="247" type="soldier"/>
+ <tile id="249" type="archer"/>
+ <tile id="252" type="guard"/>
+ <tile id="254" type="guard2"/>
+ <tile id="256" type="belier"/>
+ <tile id="259" type="catapult"/>
+ <tile id="261" type="tower"/>
+ <tile id="263" type="horse"/>
  <tile id="294" type="start_units"/>
 </tileset>

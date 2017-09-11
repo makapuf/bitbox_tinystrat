@@ -11,17 +11,17 @@ tile2terrain = {
 }
 
 colors  = 'blue red yellow green'.split()
-units   = 'farmer farmer_f peon peon_f archer guard guard2'.split()
+units   = 'farmer farmer_f soldier soldier_f archer guard guard2'.split()
 units2  = 'catapult belier tower horse knight boat'.split() # in order horizontally
 cursors  = 'cursor cursor2 left right down up flag1 flag2 flag3'.split()
 resources ='gold iron coal wood food'.split()
 tags    = 'hurt surrender medal1 medal2 medal3'.split()
-misc    = 'skull magic1 magic2 swirl1 swirl2 explo1 explo2 explo3 mouse'.split()
+misc    = 'skull magic1 magic2 swirl1 swirl2 explo1 explo2 explo3 mouse bzz bullet1 bullet2 bullet3'.split()
 
 MOV_DEFAULT = 1
 def speed(unit, terrain) : 
 	mtypes = {
-		('person','farmer','farmer_f','peon','peon_f','archer','guard') : 'foot',
+		('farmer','farmer_f','soldier','soldier_f','archer','guard','guard2') : 'foot',
 		('belier','catapult','tower') : 'wheels',
 		('horse','knight') : 'horse',
 		('boat',) : 'boat',
@@ -45,8 +45,6 @@ def attacks(of,to) :
 
 def distance(unit, terrain) : # attack distance
 	return 1
-
-
 
 
 class Frameset : 
@@ -88,7 +86,7 @@ class Frameset :
 	def frline(self, name, list, line,col=None) : 
 		print "enum {"
 		for ri,r in enumerate(list) : 
-			print "    %s_%s=%d,"%(name,r,self.len())
+			print "    frame_%s_%s=%d,"%(name,r,self.len())
 			self.add_frame(line*16+ri,col);
 		print '};'
 
@@ -114,9 +112,16 @@ print '};'
 frset['misc']=Frameset()
 
 print "enum {"
+for u in units+units2 : 
+	print "    unit_%s,"%u
+print "};"
+
+print '// ---- Frames'
+print '// - units (colored)'
+print "enum {"
 for ln, uni_set in [(0,units), (3,units2)]:
 	for ui,u in enumerate(uni_set) : 
-		print "    unit_%s = %d,"%(u,frset['blue'].len())
+		print "    frame_unit_%s = %d,"%(u,frset['blue'].len())
 		for c in colors : 
 			frset[c].add_frame(ln*16+ui*2     ,color=c) # normal
 			frset[c].add_frame(ln*16+ui*2+1   ,color=c) # normal frame 2 
@@ -128,9 +133,10 @@ for ln, uni_set in [(0,units), (3,units2)]:
 			frset[c].add_frame((ln+2)*16+ui*2+1,color=c) # up frame 2 
 print '};'
 
+print '// - misc.'
 print "enum {"
 for ai,a in enumerate(cursors) : 
-	print "    cursor_%s = %d,"%(a,frset['misc'].len())
+	print "    frame_cursor_%s = %d,"%(a,frset['misc'].len())
 	for c in colors : 
 		frset['misc'].add_frame(6*16+ai,color=c)
 print '};'
@@ -146,7 +152,7 @@ for k,v in frset.items() :
 	frset[k].write(k+'.png')
 
 # other named tiles
-for t in ('zero','tiny'):  
+for t in ('wood','zero'):  
 	elt = tsx.find('tile[@type="%s"]'%t)
 	print "#define tile_%s %s"%(t,elt.get('id'))
 
@@ -176,6 +182,16 @@ print 'const uint16_t terrain_tiledef[%d]={'%len(terrains)
 for t in terrains : 
 	elt = tsx.find('tile[@type="%s"]'%t)
 	print "    [terrain_%s]=%d, "%(t,(1+int(elt.get('id'))) if elt is not None else 0)
+print '};'
+
+# tile as unit (FR)
+print 'const uint16_t unit_tiledef[%d]={'%len(units+units2)
+for t in units+units2 : 
+	if t.endswith('_f') : 
+		elt = tsx.find('tile[@type="%s"]'%t[:-2])
+	else : 
+		elt = tsx.find('tile[@type="%s"]'%t)
+	print "    [unit_%s]=%d, "%(t,(1+int(elt.get('id'))) if elt is not None else 0)
 print '};'
 
 # terrain/unit movement cost 
