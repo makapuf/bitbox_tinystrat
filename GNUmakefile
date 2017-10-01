@@ -3,7 +3,8 @@ NAME:=tinystrat
 all: data.h
 
 COLORS := blue red yellow green
-DATAFILES := tiles_bg.tset map.map $(COLORS:%=%.spr) misc.spr wars.spr tiny.spr
+DATAFILES := tiles_bg.tset map.map $(COLORS:%=%.spr) misc.spr wars.spr 
+DATAFILES += intro_tiny.spr intro_bg.spr intro_horse_left.spr intro_horse_right.spr intro_objects_left.spr intro_objects_right.spr intro_wars.spr
 GAME_C_FILES = main.c lib/blitter/blitter.c lib/blitter/blitter_tmap.c lib/blitter/blitter_sprites3.c 
 
 DEFINES = VGA_MODE=400 VGA_BPP=16
@@ -14,7 +15,7 @@ main.c: data.h
 
 data.h: $(DATAFILES)
 	mkdir -p $(@D)
-	python2 $(BITBOX)/tools/embed.py $^ > $@
+	$(BITBOX)/tools/embed.py $^ > $@
 
 %.h %.tset : %.tsx %.png
 	$(BITBOX)/tools/mk_tset.py $< > $*.h
@@ -23,10 +24,13 @@ data.h: $(DATAFILES)
 	$(BITBOX)/tools/mk_tmap.py -f u16 $< > $*.h
 
 %.spr : %.png
-	$(BITBOX)/tools/mk_spr.py $< -o $*.spr -s 16x16 
+	$(BITBOX)/tools/mk_spr.py $< --min_match=800 -p COUPLES -o $*.spr -s 16x16 
+
+intro_%.spr : intro_%.png
+	$(BITBOX)/tools/mk_spr.py $^ --min_match=800 -p COUPLES -o $@
 
 wars.spr : wars.png
-	$(BITBOX)/tools/mk_spr.py $< -o $@
+	$(BITBOX)/tools/mk_spr.py $^ --min_match=800 -p COUPLES -o $@ 
 
 $(NAME)_defs.h blue.png red.png yellow.png green.png misc.png: tinystrat.py tiles_bg.tsx tiles_bg.png map.tmx
 	python tinystrat.py > $(NAME)_defs.h
