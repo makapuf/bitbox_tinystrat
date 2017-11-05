@@ -1,15 +1,23 @@
 #include "bitbox.h"
 #include <string.h>
 
+
+// embed data
 #define DATA_IMPLEMENTATION
 #include "data.h"
 #undef DATA_IMPLEMENTATION
+
 #define TINYSTRAT_IMPLEMENTATION
 #include "tinystrat_defs.h"
 #undef TINYSTRAT_IMPLEMENTATION
 
 #include "lib/blitter/blitter.h"
+/*
+  TODO : passer les sprites en palettes ? couleurs, grise quand KO. forcer palette size ds outil
+  bug : ne va pas a droite / a gauche deux fois trop ...
+  use astar
 
+ */
 
 #define SCREEN_W 25
 #define SCREEN_H 19
@@ -17,10 +25,15 @@
 #define MENU_X 10
 #define MENU_Y 5
 
+#define SKIP_INTRO
+
 
 // object *mouse_cursor;
 uint16_t vram[SCREEN_W*SCREEN_H];
 uint16_t backup_vram[5*5]; // extra for menus
+
+// extra palettes, default being blue
+pixel_t palettes[256][8]; // 4 colors + greyed
 
 enum Player_type_enum {
     player_notused,
@@ -131,11 +144,9 @@ void load_level(int map)
 void leave_level()
 {
     // release all blitter sprites
-
-
 }
 
-// fade to black a palette from a reference palette
+// fade to black a palette from a reference palette. value =0 means full black
 void palette_fade(int palette_sz, object *ob, uint16_t *src_palette, uint8_t value)
 {
     uint16_t *dst = (uint16_t*)ob->b;
@@ -148,6 +159,21 @@ void palette_fade(int palette_sz, object *ob, uint16_t *src_palette, uint8_t val
 
         // reassemble 
         dst[i] = r<<10 | g << 5 | b;
+    }
+}
+
+/*
+    replace a palette color by another in the object color
+
+    palette_sz : nb of couples
+    palette : palette_sz*2 pixels
+    from,to : colors 
+*/
+void palette_replace(int palette_sz, pixel_t *palette, pixel_t from, pixel_t to)
+{
+    for (int i=0;i<palette_sz*2;i++) {
+        if (palette[i]==from) 
+            palette[i]=to;
     }
 }
 
@@ -175,10 +201,13 @@ void intro()
         wait_vsync(1);
     }
 
-    
+    wait_vsync(15);
+    object *horse_l = sprite3_new(data_intro_horse_left_spr, 0,     50,10);
+    wait_vsync(15);
+    object *horse_r = sprite3_new(data_intro_horse_right_spr, 330,  50,10);
+    wait_vsync(15);
+
 /*
-    data_intro_horse_left_spr
-    data_intro_horse_right_spr
     data_intro_objects_left_spr
     data_intro_objects_right_spr
 */
@@ -204,6 +233,8 @@ void intro()
     for (int i=0;i<255;i+=4) {
         wars->y -= 16;
         tiny->x += 8;
+        horse_l->x -= 16;
+        horse_r->x += 16;
         palette_fade(BGPAL, bg, src_pal, 255-i);
         wait_vsync(1);
     }
@@ -211,6 +242,8 @@ void intro()
     blitter_remove(bg);
     blitter_remove(wars);
     blitter_remove(tiny);
+    blitter_remove(horse_l);
+    blitter_remove(horse_r);
 }
 
 
@@ -363,6 +396,7 @@ char * select_destination( int select_id )
             int dest = cursor_position();
             char *p = path;
             // DUMMY path : manhattan simple
+            // use astar then
             while (start != dest) {
                 message ("%d->%d\n",start, dest);
                 if (dest/SCREEN_W-start/SCREEN_W >0) {
@@ -465,6 +499,7 @@ void game()
         // animate move to dest
         object *o  = game_info.player_info[game_info.current_player].units_o[select_id];
         object *oh = game_info.player_info[game_info.current_player].units_health[select_id];
+
         uint16_t old_x = o->x, old_y = o->y;
         for (;*path;path++) {
             for (int i=0;i<16;i++){ 
@@ -474,6 +509,7 @@ void game()
                     case 'S' : o->y+=1; o->fr+=4; break;
                     case 'E' : o->x+=1; o->fr+=0; break;
                     case 'W' : o->x-=1; o->fr+=2; break;
+                    default : message ("unknown character : %c\n",*path); break;
                 }
                 o->fr += (vga_frame/16)%2;
                 oh->x = o->x;
@@ -507,7 +543,10 @@ void bitbox_main()
 {
     // load all
     game_init();
+    #ifndef SKIP_INTRO
     intro();
+    #endif 
+
     // menu : new game, about, ...
     game();
 
