@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset name="tiles_bg" tilewidth="16" tileheight="16" tilecount="448" columns="7">
- <image source="tiles_bg.png" width="112" height="1024"/>
+<tileset name="tiles_bg" tilewidth="16" tileheight="16" tilecount="217" columns="7">
+ <image source="tiles_bg.png" width="112" height="496"/>
  <terraintypes>
   <terrain name="mountains" tile="-1">
    <properties>
@@ -221,23 +221,9 @@
  <tile id="159" terrain="7,7,7,7"/>
  <tile id="161" type="wood"/>
  <tile id="168" type="zero"/>
- <tile id="217" type="plain"/>
- <tile id="219" type="mountains"/>
- <tile id="221" type="road"/>
- <tile id="224" type="forest"/>
- <tile id="226" type="sea"/>
- <tile id="228" type="river"/>
- <tile id="231" type="town"/>
- <tile id="233" type="fields"/>
- <tile id="240" type="beach"/>
- <tile id="245" type="farmer"/>
- <tile id="247" type="soldier"/>
- <tile id="249" type="archer"/>
- <tile id="252" type="guard"/>
- <tile id="254" type="guard2"/>
- <tile id="256" type="belier"/>
- <tile id="259" type="catapult"/>
- <tile id="261" type="tower"/>
- <tile id="263" type="horse"/>
- <tile id="294" type="start_units"/>
+ <tile id="196" type="P1"/>
+ <tile id="203" type="gold"/>
+ <tile id="204" type="iron"/>
+ <tile id="205" type="wood"/>
+ <tile id="206" type="food"/>
 </tileset>

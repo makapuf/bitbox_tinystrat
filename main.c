@@ -19,6 +19,8 @@
 
  */
 
+#include "tinystrat.h"
+
 #define SCREEN_W 25
 #define SCREEN_H 19
 
@@ -32,36 +34,6 @@
 uint16_t vram[SCREEN_W*SCREEN_H];
 uint16_t backup_vram[5*5]; // extra for menus
 
-// extra palettes, default being blue
-pixel_t palettes[256][8]; // 4 colors + greyed
-
-enum Player_type_enum {
-    player_notused,
-    player_human,
-    player_cpu1,
-};
-
-struct PlayerInfo {
-    uint8_t type; // player_type 
-    uint8_t resources[5];   // gold -> food
-    
-    object *units_o [16];      // frame as unit type, ptr=0 if not allocated.
-    object *units_health [16]; // same position as unit but frame=health
-
-    uint16_t has_moved; // object has moved this turn.
-};
-
-struct GameInfo {
-    uint8_t day;
-    uint8_t current_player; // 0-3
-    int8_t cursor_unit_pl;  // player id of object under cursor, <0 : None 
-    int8_t cursor_unit_id;  // id in current player object array. 
-    struct PlayerInfo player_info[4]; // by color
-    object *map;
-    object *cursor;
-
-} game_info;
-
 // global game element init
 void game_init(void)
 {
@@ -74,7 +46,7 @@ void game_init(void)
     // for game only, not intro 
 
     // init play ? level ?
-    game_info.cursor = sprite3_new(data_misc_spr, 0,1024,1); // jusr below mouser mouse_cursor
+    game_info.cursor = sprite3_new(data_misc_16x16_spr, 0,1024,1); // jusr below mouser mouse_cursor
     #if 0
     mouse_cursor = sprite3_new(data_misc_spr, 0,0,0);
     mouse_cursor->fr=frame_misc_mouse;
@@ -100,42 +72,42 @@ int8_t sinus(int x)
         return -sine_table[63-x];
 }
 
-const char *const sprite_colors[4] = {
-    data_blue_spr,
-    data_red_spr,
-    data_yellow_spr,
-    data_green_spr,
-};
-
 void load_level(int map)
 {
-    // copy level from flash to vram (direct copy)
+    // copy level from flash to vram (direct copy) 
     memcpy(vram, &data_map_map[8+sizeof(vram)*map],sizeof(vram));
-    if (!map) return;
+    
+    for (int i=0;i<32;i++) { // unit
+        uint8_t *unit = &level_units[map-1][i][0];
 
-    for (int ply=0;ply<4;ply++) {
-        int nunits=0;
-        for (int i=0;i<16;i++) {
-            uint8_t *unit = &level_units[map-1][ply][i][0];
-            if (unit[2]) {
-                // allocate sprite
-                if (unit[2]==16) { 
-                    // special : flag - or put into units
-                } else {
-                    object *o =sprite3_new(sprite_colors[ply], unit[0]*16,unit[1]*16,5); // below cursors
-                    o->fr = (unit[2]-1)*8;
-                    game_info.player_info[ply].units_o[nunits] = o;
+        if (!unit[2]) break; // no type defined : stop
 
-                    object *oh=sprite3_new(data_misc_spr, unit[0]*16,unit[1]*16,4); // top of prec, below mouse_cursor
-                    oh->fr = frame_number_0+10; // default to health 10
-                    game_info.player_info[ply].units_health[nunits] = oh;
+        // allocate sprite
+        if (unit[2]==16) { 
+            // special : flag - or put into units
+        } else {
 
-                    nunits++;
+            object *o =sprite3_new(
+                data_units_16x16_spr, 
+                unit[0]*16,
+                unit[1]*16,
+                5 // below cursors
+            ); 
+            game_info.units[i] = o;
+            unit_set_type(o,unit[2]-1);
+            unit_set_player(o,unit[3]);
 
-                    message("init unit %d,%d : %d\n",o->x, o->y, unit[2]-1);
+            object *oh=sprite3_new(
+                data_misc_16x16_spr, 
+                unit[0]*16,
+                unit[1]*16,  
+                4 // top of prec, below mouse_cursor
+            );
+            game_info.units_health[i] = oh;
 
-                }
-            }
+            oh->fr = fr_misc_0+10; // default to health 10
+
+            message("init unit %d,%d : typ %d color %d\n",o->x, o->y, unit[2]-1, unit[3]);
         }
     }
 }
@@ -143,7 +115,7 @@ void load_level(int map)
 
 void leave_level()
 {
-    // release all blitter sprites
+    // release all blitter sprites, set to zero
 }
 
 // fade to black a palette from a reference palette. value =0 means full black
@@ -159,21 +131,6 @@ void palette_fade(int palette_sz, object *ob, uint16_t *src_palette, uint8_t val
 
         // reassemble 
         dst[i] = r<<10 | g << 5 | b;
-    }
-}
-
-/*
-    replace a palette color by another in the object color
-
-    palette_sz : nb of couples
-    palette : palette_sz*2 pixels
-    from,to : colors 
-*/
-void palette_replace(int palette_sz, pixel_t *palette, pixel_t from, pixel_t to)
-{
-    for (int i=0;i<palette_sz*2;i++) {
-        if (palette[i]==from) 
-            palette[i]=to;
     }
 }
 
@@ -255,37 +212,27 @@ void update_cursor_info(void)
     object * const cursor = game_info.cursor;
 
     // "blink" mouse_cursor
-    cursor->fr=(vga_frame/32)%2 ? frame_cursor_cursor : frame_cursor_cursor2;
+    cursor->fr=(vga_frame/32)%2 ? fr_unit_cursor : fr_unit_cursor2;
 
     // terrain under the mouse_cursor
     const uint16_t tile_id = vram[(cursor->y/16)*SCREEN_W + cursor->x/16];
     int terrain_id = tile_terrain[tile_id];
     vram[3]=tile_id; 
-    // name
-    vram[4]=terrain_tiledef[terrain_id];
-    vram[5]=terrain_tiledef[terrain_id]+1;
     // defense
     vram[6]=tile_zero + terrain_defense[terrain_id];
 
     // find unit under mouse_cursor / if any
-    int8_t *op = &game_info.cursor_unit_pl;
-    int8_t *oi = &game_info.cursor_unit_id;
+    int8_t *oi = &game_info.cursor_unit;
 
-    object *obj;
-    for (*op=0;*op<4;(*op)++) {
-        for (*oi=0;*oi<16;(*oi)++) {
-            obj = game_info.player_info[*op].units_o[*oi];
-            if (obj && obj->x/16 == cursor->x/16 && obj->y/16 == cursor->y/16 ) {
-                vram[11] = unit_tiledef[obj->fr/8];
-                vram[12] = unit_tiledef[obj->fr/8]+1;
-                return;
-            }
+    for (*oi=0;*oi<16;(*oi)++) {
+        object *obj = game_info.units[*oi];
+        if (obj && obj->x/16 == cursor->x/16 && obj->y/16 == cursor->y/16 ) {            
+            return;
         }
     }
+    
     // not found
-    *op = *oi= -1;
-    vram[11] = tile_wood+7; 
-    vram[12] = tile_wood+1;
+    *oi= -1;
 }
 
 void move_cursor(uint16_t gamepad_pressed)
@@ -348,12 +295,9 @@ int select_unit( void )
             wait_vsync(1);
         } while( !(pressed & gamepad_A) );
 
-        if (
-            game_info.cursor_unit_pl == game_info.current_player &&
-            // check has not moved yet 
-            !(game_info.player_info[game_info.current_player].has_moved & 1<<game_info.cursor_unit_id)
-            ) {
-                return game_info.cursor_unit_id;
+        object *u  = game_info.units[ game_info.cursor_unit ];
+        if ( unit_get_player(u)==game_info.current_player && !unit_has_moved(u)) {
+            return game_info.cursor_unit;
         } else {
             continue;
         }
@@ -375,10 +319,10 @@ char * select_destination( int select_id )
 
             // animate selected unit / health
             
-            object *o = game_info.player_info[game_info.current_player].units_o[select_id];
+            object *o = game_info.units[select_id];
             o->y = (o->y/16)*16 + ((vga_frame/16)%2 ? 1 : 0);
-            o = game_info.player_info[game_info.current_player].units_health[select_id];
-            o->y = (o->y/16)*16 + ((vga_frame/16)%2 ? 1 : 0);
+            object *oh = game_info.units_health[select_id];
+            oh->y = (oh->y/16)*16 + ((vga_frame/16)%2 ? 1 : 0);
 
             move_cursor(pressed);
             update_cursor_info();
@@ -392,7 +336,7 @@ char * select_destination( int select_id )
         if (pressed & gamepad_B)
             return 0;
 
-        if (game_info.cursor_unit_pl==-1) {
+        if (game_info.cursor_unit==-1) {
             int dest = cursor_position();
             char *p = path;
             // DUMMY path : manhattan simple
@@ -434,15 +378,15 @@ int menu_action()
             vram[(MENU_Y+j)*SCREEN_W+MENU_X+i] = action_menu_tiles[j*3+i]+1;
         }
     
-    object *bullet = sprite3_new(data_misc_spr,MENU_X*16,MENU_Y*16,0);
+    object *bullet = sprite3_new(data_misc_16x16_spr,MENU_X*16,MENU_Y*16,0);
     
     // select option
     // wait for keypress / animate 
     const uint8_t bullet_animation[] = {
-        frame_misc_bullet1,
-        frame_misc_bullet2,
-        frame_misc_bullet3,
-        frame_misc_bullet2
+        fr_unit_bullet1,
+        fr_unit_bullet2,
+        fr_unit_bullet3,
+        fr_unit_bullet2
     };
 
     uint16_t pressed;
@@ -477,7 +421,7 @@ int menu_action()
     return (pressed & gamepad_A) ? res : -1;
 }
 
-void game()
+void level_play()
 {
 
     game_info.cursor->y=32;
@@ -486,7 +430,11 @@ void game()
     load_level(1);
     // cycle through players, turn by turn, start play, ...
     // reset game data
-    game_info.player_info[game_info.current_player].has_moved = 0;
+    for (int i=0;i<32;i++) {
+        if (game_info.units[i])
+            unit_reset_moved(game_info.units[i]);
+    }
+
     while (1) {
         int select_id = select_unit();
         message("selected unit %d\n",select_id);
@@ -497,8 +445,8 @@ void game()
         message("selected dest : %s\n",path);
 
         // animate move to dest
-        object *o  = game_info.player_info[game_info.current_player].units_o[select_id];
-        object *oh = game_info.player_info[game_info.current_player].units_health[select_id];
+        object *o  = game_info.units[select_id];
+        object *oh = game_info.units_health[select_id];
 
         uint16_t old_x = o->x, old_y = o->y;
         for (;*path;path++) {
@@ -531,9 +479,8 @@ void game()
             continue;
         }
 
-        game_info.player_info[game_info.current_player].has_moved |= 1<<select_id;
+        unit_set_moved (game_info.units[select_id]);
     }
-
 
     leave_level();
 
@@ -548,6 +495,6 @@ void bitbox_main()
     #endif 
 
     // menu : new game, about, ...
-    game();
+    level_play();
 
 }

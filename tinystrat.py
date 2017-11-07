@@ -83,7 +83,7 @@ for ui,u in enumerate(cursors) :
 print '    // flags'
 for ui,u in enumerate(flags) :
 	print "    fr_unit_%s = %d,"%(u,len(units)*8+8+ui)
-print "}"
+print "};"
 
 print '// - sprite misc.'
 print "enum {"
@@ -124,22 +124,6 @@ for elt in tsx.findall('terraintypes/terrain') :
 	defn = elt.find('properties/property[@name="defense"]').get('value')
 	print "    [terrain_%s]=%d, "%(elt.get('name'),int(defn)+1)
 print '};'
-# tile as name (FR)
-print 'const uint16_t terrain_tiledef[%d]={'%len(terrains)
-for t in terrains : 
-	elt = tsx.find('tile[@type="%s"]'%t)
-	print "    [terrain_%s]=%d, "%(t,(1+int(elt.get('id'))) if elt is not None else 0)
-print '};'
-
-# tile as unit (FR)
-print 'const uint16_t unit_tiledef[%d]={'%len(units)
-for t in units : 
-	if t.endswith('_f') : 
-		elt = tsx.find('tile[@type="%s"]'%t[:-2])
-	else : 
-		elt = tsx.find('tile[@type="%s"]'%t)
-	print "    [unit_%s]=%d, "%(t,(1+int(elt.get('id'))) if elt is not None else 0)
-print '};'
 
 # terrain/unit movement cost 
 print 'const uint8_t terrain_move_cost[%d][%d]={'%(len(units),len(terrains))
@@ -151,12 +135,12 @@ print '};'
 # --------------------------
 tmx=ET.parse('map.tmx').getroot()
 
-units_ts = [x for x in tmx.findall('tileset[image]') if x.find('image').get('source')=="units.png"][0]
+units_ts = [x for x in tmx.findall('tileset[image]') if x.find('image').get('source')=="map_units.png"][0]
 firstgid_units = int(units_ts.get('firstgid'))
 tmap_w = int(tmx.get('width'))
 print '// ----'
 print '// Units initial positions by level'
-print "uint8_t level_units[][4][16][3] = { // N levels, 4 colors, 16 units, {x,y,type 1-16}"
+print "uint8_t level_units[][32][4] = { // N levels, units, {x,y,type 1-16, color}"
 for l in tmx.findall('layer') : 
 	if l.get('name').endswith('_units') and l.get('name').startswith('_level'): 
 		dat = l.find('data')
@@ -164,19 +148,16 @@ for l in tmx.findall('layer') :
 
 		lvl = [int(x) for x in dat.text.replace('\n','').split(',')]
 		items = [(n,t-firstgid_units) for n,t in enumerate(lvl) if t]
-		# transform into 4 starting elements
-		it_color = [[],[],[],[]]
+
+		print '    {'
 		for id,item in items : 
 			color = item/16
-			it_color[color].append((id, 1+item%16))
-		print '    {'
-		for i in it_color : 
-			print "        {%s},"%(','.join('{%d,%d,%d}'%(id%tmap_w,id/tmap_w,unit) for id,unit in i))
+			unit  = 1+item%16
+			x = id%tmap_w
+			y = id/tmap_w
+			print "        {%d,%d,unit_%s,color_%s},"%(x,y,units[unit],colors[color])
 		print '    },'
 
 print "};"
 
-
 print '#endif'
-
-

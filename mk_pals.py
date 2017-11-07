@@ -12,7 +12,7 @@ from utils import rgba2u16
 colors = Image.open('colors.png').load()
 
 # load palette from original sprite
-units = Sprite('units.spr')
+units = Sprite('units_16x16.spr')
 
 # build palettes from original
 newpal = [[],[],[],[],[],[],[],[]] # 8 palettes : colors, faded_colors
