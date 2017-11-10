@@ -11,7 +11,10 @@ DATAFILES += intro_tiny.spr \
 	intro_horse_right.spr \
 	intro_objects_left.spr \
 	intro_objects_right.spr \
-	intro_wars.spr
+	intro_wars.spr \
+	bg_plain.spr \
+	bg_town.spr \
+	bg_forest.spr
 
 GAME_C_FILES = main.c \
 	lib/blitter/blitter.c \
