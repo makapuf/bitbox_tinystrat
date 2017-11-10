@@ -41,7 +41,7 @@ data.h: $(DATAFILES)
 	$(GRSCRIPTS)/mk_tmap.py -f u16 $< > $*.h
 
 %.spr : %.png
-	$(GRSCRIPTS)/mk_spr.py $< --min_match=800 -p COUPLES -o $*.spr
+	$(GRSCRIPTS)/mk_spr.py $< -p COUPLES -o $*.spr
 
 palettes.bin : units_16x16.spr
 	python mk_pals.py 

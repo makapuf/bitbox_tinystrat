@@ -21,14 +21,6 @@
 
 #include "tinystrat.h"
 
-#define SCREEN_W 25
-#define SCREEN_H 19
-
-#define MENU_X 10
-#define MENU_Y 5
-
-#define SKIP_INTRO
-
 
 // object *mouse_cursor;
 uint16_t vram[SCREEN_W*SCREEN_H];
@@ -77,7 +69,7 @@ void load_level(int map)
     // copy level from flash to vram (direct copy) 
     memcpy(vram, &data_map_map[8+sizeof(vram)*map],sizeof(vram));
     
-    for (int i=0;i<32;i++) { // unit
+    for (int i=0;i<MAX_UNITS;i++) { // unit
         uint8_t *unit = &level_units[map-1][i][0];
 
         if (!unit[2]) break; // no type defined : stop
@@ -136,16 +128,10 @@ void palette_fade(int palette_sz, object *ob, uint16_t *src_palette, uint8_t val
 
 void intro()
 {
-    // load bg
-    // load horse, make it come left
-    // load horse right, make it come 
-    // load objects 1 / 2
-    // load "wars" / flash it.
-
     //load_level(0);
     object *bg = sprite3_new(data_intro_bg_spr, 0,0,200);
 
-    #define BGPAL 32 // couples
+    #define BGPAL 64 // couples
     // replace with ram palette
     uint16_t *src_pal = (uint16_t*) bg->b; // in rom 
     static uint16_t ram_palette[BGPAL*2]; 
@@ -188,6 +174,7 @@ void intro()
 
     // fade out bg & remove 
     for (int i=0;i<255;i+=4) {
+        message("%d\n",i); // FIXME CLIPPING
         wars->y -= 16;
         tiny->x += 8;
         horse_l->x -= 16;
@@ -201,6 +188,7 @@ void intro()
     blitter_remove(tiny);
     blitter_remove(horse_l);
     blitter_remove(horse_r);
+    message("End of intro.\n");
 }
 
 
@@ -257,7 +245,7 @@ void move_cursor(uint16_t gamepad_pressed)
         cursor->x -= 16;
     if (gamepad_pressed & gamepad_right && cursor->x < VGA_H_PIXELS-16) 
         cursor->x += 16;
-    if (gamepad_pressed & gamepad_up && cursor->y > 32) 
+    if (gamepad_pressed & gamepad_up && cursor->y > 16) 
         cursor->y -= 16;
     if (gamepad_pressed & gamepad_down && cursor->y < VGA_V_PIXELS-16) 
         cursor->y += 16;
@@ -424,13 +412,13 @@ int menu_action()
 void level_play()
 {
 
-    game_info.cursor->y=32;
+    game_info.cursor->y=16;
     game_info.cursor->x=0;
 
     load_level(1);
     // cycle through players, turn by turn, start play, ...
     // reset game data
-    for (int i=0;i<32;i++) {
+    for (int i=0;i<MAX_UNITS;i++) {
         if (game_info.units[i])
             unit_reset_moved(game_info.units[i]);
     }
@@ -451,6 +439,8 @@ void level_play()
         uint16_t old_x = o->x, old_y = o->y;
         for (;*path;path++) {
             for (int i=0;i<16;i++){ 
+
+                // fixme unit_set_frame(6,(vga_frame/16)%2), ...
                 o->fr &= ~7;
                 switch(*path) {
                     case 'N' : o->y-=1; o->fr+=6; break;
@@ -490,9 +480,7 @@ void bitbox_main()
 {
     // load all
     game_init();
-    #ifndef SKIP_INTRO
     intro();
-    #endif 
 
     // menu : new game, about, ...
     level_play();

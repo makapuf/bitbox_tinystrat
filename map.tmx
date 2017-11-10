@@ -86,7 +86,27 @@
  <tileset firstgid="442" name="units" tilewidth="16" tileheight="16" tilecount="64" columns="16">
   <image source="map_units.png" trans="ff00da" width="256" height="64"/>
  </tileset>
- <tileset firstgid="506" source="faces.tsx"/>
+ <tileset firstgid="506" name="faces" tilewidth="26" tileheight="26" tilecount="25" columns="5">
+  <image source="faces_26x26.png" trans="ff00da" width="130" height="130"/>
+  <tile id="0">
+   <animation>
+    <frame tileid="0" duration="500"/>
+    <frame tileid="1" duration="500"/>
+   </animation>
+  </tile>
+  <tile id="4">
+   <animation>
+    <frame tileid="4" duration="300"/>
+    <frame tileid="7" duration="1000"/>
+   </animation>
+  </tile>
+  <tile id="8">
+   <animation>
+    <frame tileid="8" duration="500"/>
+    <frame tileid="9" duration="500"/>
+   </animation>
+  </tile>
+ </tileset>
  <layer name="level0" width="25" height="19">
   <data encoding="csv">
 162,162,199,11,168,211,176,163,162,166,167,168,209,179,162,165,204,182,205,176,206,177,207,182,216,

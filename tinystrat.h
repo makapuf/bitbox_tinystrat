@@ -1,6 +1,15 @@
 // tinystrat header file
 
-#include "data.h"
+#include "data.h" // data_palettes_bin declaration
+
+
+#define SCREEN_W 25
+#define SCREEN_H 19
+
+#define MENU_X 10
+#define MENU_Y 5
+
+#define MAX_UNITS 32
 
 enum Player_type_enum {
     player_notused,
@@ -25,8 +34,8 @@ struct GameInfo {
     uint8_t resources[4][5]; // per color / resource id
 
     // global info
-    object *units [32];      // frame as unit type, ptr=0 if not allocated. palette as player+aleady moved (faded)
-    object *units_health[32];  // same position as unit but frame=health
+    object *units [MAX_UNITS];      // frame as unit type, ptr=0 if not allocated. palette as player+aleady moved (faded)
+    object *units_health[MAX_UNITS];  // same position as unit but frame=health
 
     object *map;		// BG
     object *cursor;
