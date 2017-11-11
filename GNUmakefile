@@ -14,7 +14,13 @@ DATAFILES += intro_tiny.spr \
 	intro_wars.spr \
 	bg_plain.spr \
 	bg_town.spr \
-	bg_forest.spr
+	bg_forest.spr \
+	bg_mer.spr  \
+	bg_road.spr \
+	menu_attack.spr \
+	menu_bg.spr \
+	main_menu.spr 
+
 
 GAME_C_FILES = main.c \
 	lib/blitter/blitter.c \
