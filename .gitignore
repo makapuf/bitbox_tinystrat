@@ -12,3 +12,4 @@ data.h
 *.bin
 *.elf
 tinystrat_defs.h
+*.spr.png

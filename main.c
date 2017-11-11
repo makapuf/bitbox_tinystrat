@@ -148,6 +148,7 @@ void intro()
 
     wait_vsync(15);
     object *horse_l = sprite3_new(data_intro_horse_left_spr, 0,     50,10);
+    // enter left/right
     wait_vsync(15);
     object *horse_r = sprite3_new(data_intro_horse_right_spr, 330,  50,10);
     wait_vsync(15);
@@ -157,7 +158,7 @@ void intro()
     data_intro_objects_right_spr
 */
 
-    object *tiny = sprite3_new(data_intro_tiny_spr, -16,40,10);
+    object *tiny = sprite3_new(data_intro_tiny_spr, -16,140,10);
     wait_vsync(30);
     for (int i=0;i<50;i++) {
         tiny->x += 4;
@@ -533,9 +534,10 @@ void level_play()
 void bitbox_main()
 {
     // load all
-    //intro();
+    intro();
 
-    // menu : new game, about, ...
+    // main_menu : new game, about, ...
+
     game_init();
     level_play();
 
