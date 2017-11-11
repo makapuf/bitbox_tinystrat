@@ -46,7 +46,6 @@ struct GameInfo {
 // Units
 #include "data.h"
 
-
 static inline int unit_get_type  (object *unit) // return unit_id
 { 
 	return (unit->fr)/8; 
@@ -65,11 +64,11 @@ static inline void unit_set_frame (object *unit, int direction, int frame)
 
 static inline int unit_get_palette (object *unit) 
 { 
-	return (unit->b - (uintptr_t) data_palettes_bin ) / 512;
+	return (unit->b - (uintptr_t) data_palettes_bin ) / 1024;
 }
 static inline void unit_set_palette(object *unit, int palette)
 {
-	unit->b = (uintptr_t)&data_palettes_bin[512*palette];  
+	unit->b = (uintptr_t)&data_palettes_bin[1024*palette];  
 }
 
 

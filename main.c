@@ -24,7 +24,6 @@
 
 // object *mouse_cursor;
 uint16_t vram[SCREEN_W*SCREEN_H];
-uint16_t backup_vram[5*5]; // extra for menus
 
 // global game element init
 void game_init(void)
@@ -38,7 +37,8 @@ void game_init(void)
     // for game only, not intro 
 
     // init play ? level ?
-    game_info.cursor = sprite3_new(data_misc_16x16_spr, 0,1024,1); // jusr below mouser mouse_cursor
+    game_info.cursor = sprite3_new(data_units_16x16_spr, 0,1024,1); 
+    game_info.cursor->fr = fr_unit_cursor;
     #if 0
     mouse_cursor = sprite3_new(data_misc_spr, 0,0,0);
     mouse_cursor->fr=frame_misc_mouse;
@@ -51,7 +51,10 @@ void game_init(void)
 int8_t sinus(int x)
 {
     // 0- pi/2 sines in 16 steps
-    static const uint8_t sine_table[] = {0, 12, 24, 37, 48, 60, 71, 81, 90, 98, 106, 112, 118, 122, 125, 127};
+    static const uint8_t sine_table[] = {
+         0, 12,  24,  37,  48,  60,  71,  81,
+        90, 98, 106, 112, 118, 122, 125, 127
+    };
     x %= 64;
 
     if (x<16)
@@ -64,21 +67,21 @@ int8_t sinus(int x)
         return -sine_table[63-x];
 }
 
+#define MAP_HEADER_SZ 8
 void load_level(int map)
 {
     // copy level from flash to vram (direct copy) 
-    memcpy(vram, &data_map_map[8+sizeof(vram)*map],sizeof(vram));
+    memcpy(vram, &data_map_map[MAP_HEADER_SZ+sizeof(vram)*map],sizeof(vram));
     
     for (int i=0;i<MAX_UNITS;i++) { // unit
-        uint8_t *unit = &level_units[map-1][i][0];
+        uint8_t *unit = &level_units[map][i][0];
 
         if (!unit[2]) break; // no type defined : stop
 
-        // allocate sprite
         if (unit[2]==16) { 
-            // special : flag - or put into units
+            // special : flag 
         } else {
-
+            // allocate sprite
             object *o =sprite3_new(
                 data_units_16x16_spr, 
                 unit[0]*16,
@@ -128,7 +131,6 @@ void palette_fade(int palette_sz, object *ob, uint16_t *src_palette, uint8_t val
 
 void intro()
 {
-    //load_level(0);
     object *bg = sprite3_new(data_intro_bg_spr, 0,0,200);
 
     #define BGPAL 64 // couples
@@ -212,7 +214,7 @@ void update_cursor_info(void)
     // find unit under mouse_cursor / if any
     int8_t *oi = &game_info.cursor_unit;
 
-    for (*oi=0;*oi<16;(*oi)++) {
+    for (*oi=0;*oi<MAX_UNITS;(*oi)++) {
         object *obj = game_info.units[*oi];
         if (obj && obj->x/16 == cursor->x/16 && obj->y/16 == cursor->y/16 ) {            
             return;
@@ -220,7 +222,7 @@ void update_cursor_info(void)
     }
     
     // not found
-    *oi= -1;
+    *oi=-1;
 }
 
 void move_cursor(uint16_t gamepad_pressed)
@@ -269,11 +271,57 @@ uint16_t gamepad_pressed(void)
 }
 
 
-// wait till button A pressed and on one of my units.
+// returns a choice between 1 and nb_choices or zero to cancel
+unsigned int menu(const void*data, int nb_choices)
+{
+    object *menu   = sprite3_new(data,MENU_X*16,MENU_Y*16,  5);
+    object *bullet = sprite3_new(data_units_16x16_spr,MENU_X*16,MENU_Y*16+8,0);
+    
+    // select option
+    // wait for keypress / animate 
+    const uint8_t bullet_animation[] = {
+        fr_unit_bullet1,
+        fr_unit_bullet2,
+        fr_unit_bullet3,
+        fr_unit_bullet2
+    };
+    uint16_t pressed;
+
+    uint8_t choice=0;
+    while(1) {
+        pressed=gamepad_pressed();
+        if (pressed & gamepad_up) {
+            if (choice==0)
+                choice = nb_choices-1;
+            else 
+                choice--;
+        } else if (pressed & gamepad_down) {
+            if (choice==nb_choices-1)
+                choice = 0;
+            else 
+                choice++;
+        } else if (pressed & gamepad_A) {
+            break;
+        } else if (pressed & gamepad_B) {
+            break;
+        }
+
+        bullet->fr = bullet_animation[(vga_frame/16)%4];
+        bullet->y  =  MENU_Y*16+8+choice*16;
+        wait_vsync(1);
+    }
+
+    blitter_remove(bullet);
+    blitter_remove(menu);
+
+    return (pressed & gamepad_A) ? choice+1 : 0;
+}
+
 int select_unit( void )
 {
     uint16_t pressed;
 
+    // wait till button A pressed on one of my units.
     while(1) {
         do { 
             pressed  = gamepad_pressed();
@@ -282,6 +330,9 @@ int select_unit( void )
 
             wait_vsync(1);
         } while( !(pressed & gamepad_A) );
+
+        if (game_info.cursor_unit<0) 
+            menu(data_menu_bg_spr,4); // bg click fixme handle end / exit ?
 
         object *u  = game_info.units[ game_info.cursor_unit ];
         if ( unit_get_player(u)==game_info.current_player && !unit_has_moved(u)) {
@@ -295,6 +346,7 @@ int select_unit( void )
 
 #define MAX_PATH 16
 char path[MAX_PATH]; // path = string of NSEW or NULL for abort
+
 char * select_destination( int select_id )
 {
     int start = cursor_position();
@@ -355,59 +407,50 @@ char * select_destination( int select_id )
     }
 }
 
-// fixme attack pas tjs dispo, harvest pour certains .. 
-const uint16_t action_menu_tiles[6] = {287,290,291,294,297,298};
-int menu_action()
+void combat(int left_unit, int right_unit) 
 {
-    // backup vram & place menu tiles
-    for (int j=0;j<2;j++)
-        for (int i=0;i<3;i++) {
-            backup_vram[j*3+i]=vram[(MENU_Y+j)*SCREEN_W+MENU_X+i];
-            vram[(MENU_Y+j)*SCREEN_W+MENU_X+i] = action_menu_tiles[j*3+i]+1;
+    // hide all units 
+    for (int i=0;i<MAX_UNITS;i++)
+        if (game_info.units[i]) {
+            game_info.units[i]->y+=300;
+            game_info.units_health[i]->y+=300;
         }
-    
-    object *bullet = sprite3_new(data_misc_16x16_spr,MENU_X*16,MENU_Y*16,0);
-    
-    // select option
-    // wait for keypress / animate 
-    const uint8_t bullet_animation[] = {
-        fr_unit_bullet1,
-        fr_unit_bullet2,
-        fr_unit_bullet3,
-        fr_unit_bullet2
-    };
+    game_info.cursor->y += 300; // hide cursor
 
-    uint16_t pressed;
-    while(1) {
-        pressed=gamepad_pressed();
-        if (pressed & gamepad_up) {
-            bullet->y -= 16;
-            if (bullet->y < MENU_Y*16) bullet->y = MENU_Y*16+16;
-        } else if (pressed & gamepad_down) {
-            bullet->y += 16;
-            if (bullet->y > MENU_Y*16+16) bullet->y = MENU_Y*16;
-        } else if (pressed & gamepad_A) {
-            break;
-        } else if (pressed & gamepad_B) {
-            break;
-        }
+    // depends on what we are on
+    object *bg_left  = sprite3_new(data_bg_forest_spr,  0,-200,35); 
+    object *bg_right = sprite3_new(data_bg_town_spr  ,200, 300,35); 
 
-        bullet->fr = bullet_animation[(vga_frame/16)%4];
-
+    // intro
+    for (int i=0;i<25;i++) {
+        bg_left ->y+=10;
+        bg_right->y-=10;
         wait_vsync(1);
     }
 
-    // restore vram
-    for (int j=0;j<2;j++)
-        for (int i=0;i<3;i++) {
-            vram[(MENU_Y+j)*SCREEN_W+MENU_X+i]= backup_vram[j*3+i];
+    // wait keypress
+    while( GAMEPAD_PRESSED(0,A)) { wait_vsync(1); }
+    while(!GAMEPAD_PRESSED(0,A)) { wait_vsync(1); }
+    while( GAMEPAD_PRESSED(0,A)) { wait_vsync(1); }
+
+    // outro
+    for (int i=0;i<25;i++) {
+        bg_left ->y-=10;
+        bg_right->y+=10;
+        wait_vsync(1);
+    }
+    blitter_remove(bg_left);
+    blitter_remove(bg_right);
+
+    // show all units again
+    for (int i=0;i<MAX_UNITS;i++)
+        if (game_info.units[i]) {
+            game_info.units[i]->y-=300;
+            game_info.units_health[i]->y-=300;
         }
-
-    int res = bullet->y/16-MENU_Y;
-    blitter_remove(bullet);
-
-    return (pressed & gamepad_A) ? res : -1;
+    game_info.cursor->y -= 300; // show cursor
 }
+
 
 void level_play()
 {
@@ -415,7 +458,8 @@ void level_play()
     game_info.cursor->y=16;
     game_info.cursor->x=0;
 
-    load_level(1);
+    load_level(0);
+
     // cycle through players, turn by turn, start play, ...
     // reset game data
     for (int i=0;i<MAX_UNITS;i++) {
@@ -459,14 +503,24 @@ void level_play()
         o->fr &= ~7;
 
         // mini menu action : attack / harvest / 
-        int action = menu_action();
-        if (action==-1) {
-            // rewind position
-            o->x = old_x;
-            o->y = old_y;
-            oh->x = o->x;
-            oh->y = o->y;
-            continue;
+        int action = menu(data_menu_attack_spr,3);
+        switch(action)
+        {
+            case 0: // cancel : rewind position
+                o->x = old_x;
+                o->y = old_y;
+                oh->x = o->x;
+                oh->y = o->y;
+                continue;
+                break;
+            case 1 : // attack
+                combat(0,0); // fixme
+                break;
+            case 2 : // wait
+                break;
+
+        }
+        if (!action) {
         }
 
         unit_set_moved (game_info.units[select_id]);
@@ -479,10 +533,10 @@ void level_play()
 void bitbox_main()
 {
     // load all
-    game_init();
-    intro();
+    //intro();
 
     // menu : new game, about, ...
+    game_init();
     level_play();
 
 }

@@ -5,36 +5,45 @@ import xml.etree.ElementTree as ET
 from PIL import Image
 import sys
 
+DEBUG=True
+
 sys.path.append('sdk/lib/blitter/scripts')
 from spr2png import Sprite
 from utils import rgba2u16
-
 colors = Image.open('colors.png').load()
 
 # load palette from original sprite
 units = Sprite('units_16x16.spr')
 
 # build palettes from original
-newpal = [[],[],[],[],[],[],[],[]] # 8 palettes : colors, faded_colors
 def fade(c) : 
-	"fade color : average with grey"
-	return c[0]+64//2, c[1]+64//2, c[2]+64//2, c[3]
+	"fade color : average with darker grey"
+	return (c[0]+64)//2, (c[1]+64)//2, (c[2]+64)//2, c[3]
 
-for a,b in units.palette : 
-	for c in range(4) : # blue, ...
-		for i in range(4) : # line
-			if a==colors[0,i] : a = colors[c,i]
-			if b==colors[0,i] : b = colors[c,i]
-		newpal[c].append(a)
-		newpal[c].append(b)
+newpal = [[] for i in range(8)] # 8 palettes : colors, faded_colors
+for a,b in units.palette : # for each couple colors in initial palette
+	for c in range(4) : # columns : target colors , blue, ...
+		na=a
+		nb=b
+		for nuance in range(4) : # line : 4 nuances to test
+			if a==colors[0,nuance] : na = colors[c,nuance]
+			if b==colors[0,nuance] : nb = colors[c,nuance]
 
-		newpal[c+4].append(fade(a))
-		newpal[c+4].append(fade(b))
+		newpal[c].append(na)
+		newpal[c].append(nb)
+		newpal[c+4].append(fade(na))
+		newpal[c+4].append(fade(nb))
 
 # add one couple to each palette to make them 256-colors
 for p in newpal : 
 	p.append((0,0,0,0))
 	p.append((0,0,0,0))
+
+# debug palettes
+if DEBUG : 
+	dpal = Image.new('RGBA',(512,8))
+	dpal.putdata(newpal[0]+newpal[1]+newpal[2]+newpal[3]+newpal[4]+newpal[5]+newpal[6]+newpal[7])
+	dpal.save('_debug.png')	
 
 # save palettes as colors to .pal file containting 4+4 palettes of 256 couples of 2 bytes/color each.
 of = open('palettes.bin','wb')
@@ -42,4 +51,3 @@ for p in newpal :
 	for c in p :
 		u16 = rgba2u16(*c)
 		of.write(chr(u16&0xff)+chr(u16>>8))
-
