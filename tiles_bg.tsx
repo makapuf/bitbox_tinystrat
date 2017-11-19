@@ -101,17 +101,20 @@
  <tile id="10" terrain="0,0,0,0"/>
  <tile id="11" terrain="0,0,0,0"/>
  <tile id="12" terrain="0,0,0,0"/>
+ <tile id="13" terrain="10,10,10,10"/>
  <tile id="14" terrain="2,2,2,2"/>
  <tile id="15" terrain="2,2,2,2"/>
  <tile id="16" terrain="2,2,2,2"/>
  <tile id="17" terrain="2,2,2,2"/>
- <tile id="18">
+ <tile id="18" terrain="11,11,11,11">
   <animation>
    <frame tileid="18" duration="250"/>
    <frame tileid="19" duration="250"/>
    <frame tileid="20" duration="250"/>
   </animation>
  </tile>
+ <tile id="19" terrain="11,11,11,11"/>
+ <tile id="20" terrain="11,11,11,11"/>
  <tile id="21" terrain="2,2,2,2"/>
  <tile id="22" terrain="7,7,7,7"/>
  <tile id="23" terrain="7,7,7,7"/>
@@ -192,8 +195,8 @@
  <tile id="121" terrain="6,6,6,6"/>
  <tile id="122" terrain="6,6,6,6"/>
  <tile id="123" terrain="6,6,6,6"/>
- <tile id="124" terrain="6,6,6,6"/>
- <tile id="125" terrain="6,6,6,6"/>
+ <tile id="124" terrain="11,11,11,11"/>
+ <tile id="125" terrain="11,11,11,11"/>
  <tile id="126" terrain="6,6,6,6"/>
  <tile id="128" terrain="6,6,6,6"/>
  <tile id="129" terrain="6,6,6,6"/>

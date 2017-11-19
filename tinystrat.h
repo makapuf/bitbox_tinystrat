@@ -1,8 +1,5 @@
 // tinystrat header file
-
-#include "data.h" // data_palettes_bin declaration
-
-
+#pragma once
 #define SCREEN_W 25
 #define SCREEN_H 19
 
@@ -15,7 +12,7 @@ enum Player_type_enum {
     player_notused,
     player_human,
     player_cpu1,
-    player_off, // abandoned game but still in
+    player_off, // abandoned game but still present
 };
 
 
@@ -36,68 +33,14 @@ struct GameInfo {
     // global info
     object *units [MAX_UNITS];      // frame as unit type, ptr=0 if not allocated. palette as player+aleady moved (faded)
     object *units_health[MAX_UNITS];  // same position as unit but frame=health
+    
+    uint16_t vram[SCREEN_W*SCREEN_H]; // map
 
     object *map;		// BG
     object *cursor;
 
 } game_info;
 
-
-// Units
-#include "data.h"
-
-static inline int unit_get_type  (object *unit) // return unit_id
-{ 
-	return (unit->fr)/8; 
-} 
-
-static inline void unit_set_type (object *unit, int unit_id) 
-{ 
-	unit->fr = unit_id*8; 
-} 
-
-// frame 0-1, direction nsew
-static inline void unit_set_frame (object *unit, int direction, int frame)
-{
-	unit->fr = (unit->fr & ~7) | direction*2 | frame;
-}
-
-static inline int unit_get_palette (object *unit) 
-{ 
-	return (unit->b - (uintptr_t) data_palettes_bin ) / 1024;
-}
-static inline void unit_set_palette(object *unit, int palette)
-{
-	unit->b = (uintptr_t)&data_palettes_bin[1024*palette];  
-}
-
-
-
-static inline int  unit_get_player(object *unit) { 
-	return unit_get_palette(unit)%4; 
-}
-
-
-// also reset moved
-static inline void unit_set_player(object *unit, int player) 
-{ 
-	unit_set_palette(unit, player);
-}  
-
-static inline int  unit_has_moved (object *unit) 
-{ 
-	return unit_get_palette(unit)/4; 
-}
-
-static inline void unit_set_moved (object *unit) 
-{ 
-	unit_set_palette(unit, unit_get_player(unit)+4 );
-}
-
-static inline void unit_reset_moved (object *unit) 
-{
-	unit_set_palette(unit, unit_get_player(unit));
-}
 
 // Map
 /*

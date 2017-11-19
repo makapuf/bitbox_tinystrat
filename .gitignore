@@ -7,9 +7,9 @@ tiles_bg.h
 _debug.png
 map.h
 data.h
+defs.h
 *.tset
 *.map
 *.bin
 *.elf
-tinystrat_defs.h
 *.spr.png

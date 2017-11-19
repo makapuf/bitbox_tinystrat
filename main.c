@@ -1,29 +1,23 @@
-#include "bitbox.h"
 #include <string.h>
+#include <stdbool.h>
 
+#include "bitbox.h"
+#include "lib/blitter/blitter.h"
 
 // embed data
 #define DATA_IMPLEMENTATION
 #include "data.h"
 #undef DATA_IMPLEMENTATION
 
-#define TINYSTRAT_IMPLEMENTATION
-#include "tinystrat_defs.h"
-#undef TINYSTRAT_IMPLEMENTATION
+#define DEFS_IMPLEMENTATION
+#include "defs.h"
+#undef DEFS_IMPLEMENTATION
 
-#include "lib/blitter/blitter.h"
-/*
-  TODO : passer les sprites en palettes ? couleurs, grise quand KO. forcer palette size ds outil
-  bug : ne va pas a droite / a gauche deux fois trop ...
-  use astar
-
- */
 
 #include "tinystrat.h"
-
+#include "units.h"
 
 // object *mouse_cursor;
-uint16_t vram[SCREEN_W*SCREEN_H];
 
 // global game element init
 void game_init(void)
@@ -32,7 +26,7 @@ void game_init(void)
         &data_tiles_bg_tset[4], // no palette
         0,0,
         TMAP_HEADER(SCREEN_W,SCREEN_H,TSET_16,TMAP_U16), 
-        vram
+        game_info.vram
         );
     // for game only, not intro 
 
@@ -71,38 +65,17 @@ int8_t sinus(int x)
 void load_level(int map)
 {
     // copy level from flash to vram (direct copy) 
-    memcpy(vram, &data_map_map[MAP_HEADER_SZ+sizeof(vram)*map],sizeof(vram));
+    memcpy(game_info.vram, &data_map_map[MAP_HEADER_SZ+sizeof(game_info.vram)*map],sizeof(game_info.vram));
     
     for (int i=0;i<MAX_UNITS;i++) { // unit
         uint8_t *unit = &level_units[map][i][0];
 
-        if (!unit[2]) break; // no type defined : stop
+        if (!unit[2]) break; // no type defined : stop here
 
         if (unit[2]==16) { 
-            // special : flag 
+            // special : flag , or not 
         } else {
-            // allocate sprite
-            object *o =sprite3_new(
-                data_units_16x16_spr, 
-                unit[0]*16,
-                unit[1]*16,
-                5 // below cursors
-            ); 
-            game_info.units[i] = o;
-            unit_set_type(o,unit[2]-1);
-            unit_set_player(o,unit[3]);
-
-            object *oh=sprite3_new(
-                data_misc_16x16_spr, 
-                unit[0]*16,
-                unit[1]*16,  
-                4 // top of prec, below mouse_cursor
-            );
-            game_info.units_health[i] = oh;
-
-            oh->fr = fr_misc_0+10; // default to health 10
-
-            message("init unit %d,%d : typ %d color %d\n",o->x, o->y, unit[2]-1, unit[3]);
+            unit_new(unit[0],unit[1],unit[2]-1,unit[3]);
         }
     }
 }
@@ -177,11 +150,11 @@ void intro()
 
     // fade out bg & remove 
     for (int i=0;i<255;i+=4) {
-        message("%d\n",i); // FIXME CLIPPING
         wars->y -= 16;
-        tiny->x += 8;
-        horse_l->x -= 16;
-        horse_r->x += 16;
+        // FIXME CLIPPING
+        // tiny->x += 8;
+        // horse_l->x -= 16;
+        // horse_r->x += 16;
         palette_fade(BGPAL, bg, src_pal, 255-i);
         wait_vsync(1);
     }
@@ -206,11 +179,11 @@ void update_cursor_info(void)
     cursor->fr=(vga_frame/32)%2 ? fr_unit_cursor : fr_unit_cursor2;
 
     // terrain under the mouse_cursor
-    const uint16_t tile_id = vram[(cursor->y/16)*SCREEN_W + cursor->x/16];
+    const uint16_t tile_id = game_info.vram[(cursor->y/16)*SCREEN_W + cursor->x/16];
     int terrain_id = tile_terrain[tile_id];
-    vram[3]=tile_id; 
+    game_info.vram[3]=tile_id; 
     // defense
-    vram[6]=tile_zero + terrain_defense[terrain_id];
+    game_info.vram[6]=tile_zero + terrain_defense[terrain_id];
 
     // find unit under mouse_cursor / if any
     int8_t *oi = &game_info.cursor_unit;
@@ -262,6 +235,7 @@ int cursor_position (void)
 }
 
 // gamepad 0 button pressed this frame ? 
+// call exactly once per frame 
 uint16_t gamepad_pressed(void)
 {
     static uint16_t gamepad_previous=0; 
@@ -273,11 +247,14 @@ uint16_t gamepad_pressed(void)
 
 
 // returns a choice between 1 and nb_choices or zero to cancel
-unsigned int menu(const void*data, int nb_choices)
+unsigned int menu(int menu_id, int nb_choices)
 {
-    object *menu   = sprite3_new(data,MENU_X*16,MENU_Y*16,  5);
+    object *menu   = sprite3_new(data_menus_88x82_spr,MENU_X*16,MENU_Y*16,  1);
     object *bullet = sprite3_new(data_units_16x16_spr,MENU_X*16,MENU_Y*16+8,0);
-    
+
+    // unroll menu ?
+    menu->fr = menu_id;
+
     // select option
     // wait for keypress / animate 
     const uint8_t bullet_animation[] = {
@@ -330,10 +307,11 @@ int select_unit( void )
             update_cursor_info();
 
             wait_vsync(1);
+
         } while( !(pressed & gamepad_A) );
 
         if (game_info.cursor_unit<0) 
-            menu(data_menu_bg_spr,4); // bg click fixme handle end / exit ?
+            menu(MENU_BG,4); // bg click fixme handle end / exit ?
 
         object *u  = game_info.units[ game_info.cursor_unit ];
         if ( unit_get_player(u)==game_info.current_player && !unit_has_moved(u)) {
@@ -361,8 +339,8 @@ char * select_destination( int select_id )
             // animate selected unit / health
             
             object *o = game_info.units[select_id];
-            o->y = (o->y/16)*16 + ((vga_frame/16)%2 ? 1 : 0);
-            object *oh = game_info.units_health[select_id];
+            object *oh = game_info.units_health[select_id];            o->y = (o->y/16)*16 + ((vga_frame/16)%2 ? 1 : 0);
+
             oh->y = (oh->y/16)*16 + ((vga_frame/16)%2 ? 1 : 0);
 
             move_cursor(pressed);
@@ -408,19 +386,40 @@ char * select_destination( int select_id )
     }
 }
 
-void combat(int left_unit, int right_unit) 
-{
-    // hide all units 
-    for (int i=0;i<MAX_UNITS;i++)
-        if (game_info.units[i]) {
-            game_info.units[i]->y+=300;
-            game_info.units_health[i]->y+=300;
-        }
-    game_info.cursor->y += 300; // hide cursor
+// true if unit died
+static void do_attack(int attacking_unit, int attacked_unit, bool right_to_left)
+{   
+    message("unit %d attacks %d,",attacking_unit,attacked_unit);
+    unit_info(attacking_unit);
+    unit_info(attacked_unit);
 
-    // depends on what we are on
-    object *bg_left  = sprite3_new(data_bg_forest_spr,  0,-200,35); 
-    object *bg_right = sprite3_new(data_bg_town_spr  ,200, 300,35); 
+    uint8_t damage = unit_attack_damage(attacking_unit, attacked_unit) * unit_get_health(attacking_unit) / 256;
+    // fixme show animations !
+    // fixme show happy / sad faces
+
+    // inflict damage
+    message("inflicting %d damage\n",damage);
+    uint8_t h = unit_get_health(attacked_unit);
+    unit_set_health(attacked_unit, h>damage ? h-damage : 0); // do not remove unit yet, anims not done 
+}
+
+void combat (int attacking_unit, int attacked_unit) 
+{
+    // hide all units
+    for (int i=0;i<MAX_UNITS;i++)
+        unit_hide(i);
+
+    game_info.cursor->y += 1024; // hide cursor
+    
+    uint8_t attacking_terrain = unit_get_terrain(game_info.units[attacking_unit]);
+    message("attacking terrain %d\n",attacking_terrain);
+    object *bg_left  = sprite3_new(terrain_bg_table[attacking_terrain],  0,-200,35); 
+
+    uint8_t attacked_terrain = unit_get_terrain(game_info.units[attacked_unit]);
+    message("attacked terrain %d\n",attacked_terrain);
+    object *bg_right = sprite3_new(terrain_bg_table[attacked_terrain ],200, 300,35); 
+
+    // also other units ...  
 
     // intro
     for (int i=0;i<25;i++) {
@@ -434,6 +433,11 @@ void combat(int left_unit, int right_unit)
     while(!GAMEPAD_PRESSED(0,A)) { wait_vsync(1); }
     while( GAMEPAD_PRESSED(0,A)) { wait_vsync(1); }
 
+    do_attack(attacking_unit, attacked_unit, true);
+
+    if (unit_get_health(attacked_unit)>0)
+        do_attack(attacked_unit, attacking_unit, false);
+
     // outro
     for (int i=0;i<25;i++) {
         bg_left ->y-=10;
@@ -445,11 +449,19 @@ void combat(int left_unit, int right_unit)
 
     // show all units again
     for (int i=0;i<MAX_UNITS;i++)
-        if (game_info.units[i]) {
-            game_info.units[i]->y-=300;
-            game_info.units_health[i]->y-=300;
-        }
-    game_info.cursor->y -= 300; // show cursor
+        unit_show(i);
+
+    // small anims if any unit just died
+    if (unit_get_health(attacked_unit)==0) {
+        // set frame to explosion 
+        unit_remove(attacked_unit);
+    }
+    if (unit_get_health(attacking_unit)==0) {
+        // 
+        unit_remove(attacking_unit);
+    }
+
+    game_info.cursor->y -= 1024; // show cursor
 }
 
 
@@ -503,8 +515,8 @@ void level_play()
         // reset to rest frame
         o->fr &= ~7;
 
-        // mini menu action : attack / harvest / 
-        int action = menu(data_menu_attack_spr,3);
+        // mini menu action : attack / harvest / nothing if not available
+        int action = menu(MENU_ATTACK,3);
         switch(action)
         {
             case 0: // cancel : rewind position
@@ -515,7 +527,7 @@ void level_play()
                 continue;
                 break;
             case 1 : // attack
-                combat(0,0); // fixme
+                combat(select_id,7); // fixme
                 break;
             case 2 : // wait
                 break;
@@ -534,10 +546,9 @@ void level_play()
 void bitbox_main()
 {
     // load all
-    intro();
+    // intro();
 
     // main_menu : new game, about, ...
-
     game_init();
     level_play();
 

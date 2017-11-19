@@ -87,7 +87,7 @@
   <image source="map_units.png" trans="ff00da" width="256" height="64"/>
  </tileset>
  <tileset firstgid="506" name="faces" tilewidth="26" tileheight="26" tilecount="25" columns="5">
-  <image source="faces_26x26.png" trans="ff00da" width="130" height="130"/>
+  <image source="sprites/faces_26x26.png" trans="ff00da" width="130" height="130"/>
   <tile id="0">
    <animation>
     <frame tileid="0" duration="500"/>
@@ -199,7 +199,7 @@
 0,0,0,0,0,0,0,0,0,0,0,480,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <objectgroup name="_objects" visible="0">
+ <objectgroup name="_objects">
   <object id="47" gid="526" x="-1" y="20" width="26" height="26"/>
  </objectgroup>
 </map>

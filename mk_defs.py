@@ -18,31 +18,54 @@ flags    = 'flag1 flag2 flag3 bullet1 bullet2 bullet3'.split()
 resources = 'gold iron coal wood food'.split()
 tags      = 'hurt surrender medal1 medal2 medal3'.split()
 misc      = 'skull magic1 magic2 swirl1 swirl2 explo1 explo2 explo3 mouse bzz'.split()
-
+menus 	  = 'bg harvest attack'.split()
 MOV_DEFAULT = 1
-def speed(unit, terrain) : 
-	mtypes = {
+ATTACK_DEFAULT=0
+
+def unit_type(unit) : 
+	MTYPES = {
 		('farmer','farmer_f','soldier','soldier_f','archer','guard','guard2') : 'foot',
 		('belier','catapult','tower') : 'wheels',
 		('horse','knight') : 'horse',
 		('boat',) : 'boat',
 		('guard2',) : 'guard2',
 	}
-	for k,v in mtypes.items() : 
+	for k,v in MTYPES.items() : 
 		if unit in k : 
-			mtype = v
-			break
-		
+			return v
+	raise ValueError,"no known type for unit %s"%u
+
+def speed(unit, terrain) : 
+	mtype=unit_type(unit)
 	elt =tsx.find('terraintypes/terrain[@name="%s"]'%terrain)
 	pmov=elt.find('properties/property[@name="move_%s"]'%mtype)
-	if pmov is None  : return MOV_DEFAULT
-	return int(pmov.get('value'))
+	return int(pmov.get('value')) if pmov is not None else MOV_DEFAULT
 
-def attacks(of,to) : 
+def damage(of,to) : 
 	'''
 	This function defines the attack level of a unit on another.
 	'''
-	return 0
+	mtype=unit_type(to)
+
+	att = {
+		('soldier','foot') : 1,
+		('soldier','wheels') : 1,
+		('soldier','horse') : 1,
+		('soldier','guard2') : 1,
+		('soldier','boat') : 1,
+		
+		('soldier_f','foot') : 1,
+		('soldier_f','wheels') : 1,
+		('soldier_f','horse') : 1,
+		('soldier_f','guard2') : 1,
+		('soldier_f','boat') : 1,
+
+		('archer','foot') : 2,
+		('boat','boat') : 1,
+		('guard','foot') : 2,
+		('guard2','foot') : 4,
+	}
+	return att.get((of,mtype),ATTACK_DEFAULT)
 
 def distance(unit, terrain) : # attack distance
 	return 1
@@ -50,8 +73,8 @@ def distance(unit, terrain) : # attack distance
 
 # Headers 
 # ---------------------------------
-print '#ifndef TINYSTRAT_DEFINITION'
-print '#define TINYSTRAT_DEFINITION'
+print '#ifndef DEFS_DEFINITION'
+print '#define DEFS_DEFINITION'
 # -- terrains
 print "enum {"
 for t in terrains : 
@@ -103,19 +126,35 @@ for t in ('wood','zero'):
 	elt = tsx.find('tile[@type="%s"]'%t)
 	print "#define tile_%s %s"%(t,elt.get('id'))
 
+# menus 
+for i,m in enumerate(menus) : 
+	print "#define MENU_%s %d"%(m.upper(),i)
+
 print '#endif'
+
 
 # Implementation 
 # ----------------------
 
-print '#ifdef TINYSTRAT_IMPLEMENTATION'
+print '#ifdef DEFS_IMPLEMENTATION'
 
 # tile -> terrain
 cnt = int(tsx.get('tilecount'))
 col = int(tsx.get('columns'))
-print 'const uint8_t tile_terrain[%d] = {'%cnt
+print 'const uint8_t tile_terrain[%d] = { -1, '%(cnt+1) # tile zero is whatever
 for i in range((cnt+col-1)//col) : 
-	print '    '+''.join('%d,'%(tile2terrain.get(i*col+j,0)) for j in range(col))
+	print '    '+''.join('%d,'%(tile2terrain.get(i*col+j,-1)) for j in range(col))
+print '};'
+
+# terrain names
+print "char *terrain_names[] = {"
+for t in terrains : 
+	print "  \"%s\","%t
+print '};'
+# unit names
+print "char *unit_names[] = {"
+for u in units : 
+	print "  \"%s\","%u
 print '};'
 
 # terrain defense
@@ -125,11 +164,25 @@ for elt in tsx.findall('terraintypes/terrain') :
 	print "    [terrain_%s]=%d, "%(elt.get('name'),int(defn)+1)
 print '};'
 
+# terrain backgrounds
+print "const char *terrain_bg_table[] = {"
+for t in terrains : 
+	print "    [terrain_%s] = &data_bg_%s_spr[0], "%(t,t)
+print "};"
+
 # terrain/unit movement cost 
 print 'const uint8_t terrain_move_cost[%d][%d]={'%(len(units),len(terrains))
 for u in units : 
 	print '  {%s}, // %s'%(','.join(str(speed(u,t)) for t in terrains),u)
 print '};'
+
+# unit/unit attack efficiency 0-16
+print 'const uint8_t unit_damage_table[%d][%d]={'%(len(units),len(units))
+for u_of in units : 
+	print '  {%s}, // %s'%(','.join(str(damage(u_of,u_to)) for u_to in units),u_of)
+print '};'
+# fixme unit_range 
+# fixme unit damages on buildings
 
 # map units 
 # --------------------------

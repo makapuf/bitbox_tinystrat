@@ -1,25 +1,19 @@
-NAME:=tinystrat
+NAME := tinystrat
 
 all: data.h
 BITBOX:=sdk
 
 COLORS := blue red yellow green
-DATAFILES := tiles_bg.tset map.map units_16x16.spr misc_16x16.spr palettes.bin faces_26x26.spr
-DATAFILES += intro_tiny.spr \
-	intro_bg.spr \
-	intro_horse_left.spr \
-	intro_horse_right.spr \
-	intro_objects_left.spr \
-	intro_objects_right.spr \
-	intro_wars.spr \
-	bg_plain.spr \
-	bg_town.spr \
-	bg_forest.spr \
-	bg_mer.spr  \
-	bg_road.spr \
-	menu_attack.spr \
-	menu_bg.spr \
-	main_menu.spr 
+TERRAINS :=  mountains forest town fields stable sea beach \
+	castle camp road plain river
+
+DATAFILES := tiles_bg.tset map.map palettes.bin \
+	sprites/units_16x16.spr sprites/misc_16x16.spr sprites/faces_26x26.spr
+INTRO := tiny bg horse_left horse_right objects_left objects_right wars 
+
+DATAFILES += $(TERRAINS:%=sprites/bg_%.spr)
+DATAFILES += $(INTRO:%=sprites/intro_%.spr)
+DATAFILES += sprites/menus_88x82.spr sprites/main_menu.spr 
 
 
 GAME_C_FILES = main.c \
@@ -32,7 +26,7 @@ DEFINES = VGA_MODE=400 VGA_BPP=16
 # graphical scripts path
 GRSCRIPTS = sdk/lib/blitter/scripts
 
-main.c: data.h tinystrat_defs.h 
+main.c: data.h defs.h 
 
 -include sdk/kernel/bitbox.mk
 
@@ -52,13 +46,13 @@ data.h: $(DATAFILES)
 palettes.bin : units_16x16.spr
 	python mk_pals.py 
 
-$(NAME)_defs.h: tinystrat.py tiles_bg.tsx map.tmx
-	python tinystrat.py > $(NAME)_defs.h
+defs.h: mk_defs.py tiles_bg.tsx map.tmx
+	python mk_defs.py > $@
 
 %.lz4 : %
 	lz4 -f -9 --content-size --no-frame-crc --no-sparse $^ $@
 
 clean::
 	rm -f $(DATAFILES) _debug.png 
-	rm -f $(NAME)_defs.h tiles_bg.h data.h map.h $(NAME)_sdl
+	rm -f defs.h tiles_bg.h data.h map.h $(NAME)_sdl
 
