@@ -20,6 +20,8 @@ struct GameInfo {
 	uint8_t map_id;
 
     uint8_t day; 
+    unsigned finished_game:1;
+    unsigned finished_turn:1;
 
     uint8_t current_player; // 0-3
 
@@ -28,7 +30,11 @@ struct GameInfo {
     // per player info
     uint8_t player_type[4]; 
     uint8_t player_avatar[4];
-    uint8_t resources[4][5]; // per color / resource id
+    // resources
+    uint8_t food[4]; // per color / resource id
+    uint8_t gold[4]; // per color / resource id
+    uint8_t wood[4]; // per color / resource id
+    uint8_t stone[4]; // per color / resource id
 
     // global info
     object *units [MAX_UNITS];      // frame as unit type, ptr=0 if not allocated. palette as player+aleady moved (faded)
@@ -38,6 +44,7 @@ struct GameInfo {
 
     object *map;		// BG
     object *cursor;
+    object *face;   // commander 
 
 } game_info;
 
@@ -51,9 +58,10 @@ map 0..N (id):
     triggers : conditions -> 1 bitmap de conditions, un callback qui verifie et s'execute eventuellement, appelé a chaque tour - pas chaque frame)
         ou un gros ? si reuse
         faire un tableau depuis maps
+        victory conditions
 
     initial pos players, initial resources
-    intro eventuelle : ds trigger
+    intro eventuelle : ds trigger_fn
 
     map_get_terrain(position u16)
     map_get

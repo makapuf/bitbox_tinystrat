@@ -13,8 +13,8 @@ from utils import rgba2u16
 colors = Image.open('colors.png').load()
 
 # load palette from original sprite
-units = Sprite('units_16x16.spr')
-
+units = Sprite('sprites/units_16x16.spr')
+print len(units.palette),'couples in palette'
 # build palettes from original
 def fade(c) : 
 	"fade color : average with darker grey"
@@ -34,10 +34,9 @@ for a,b in units.palette : # for each couple colors in initial palette
 		newpal[c+4].append(fade(na))
 		newpal[c+4].append(fade(nb))
 
-# add one couple to each palette to make them 256-colors
+# add one couple to each palette to make them 256-couples
 for p in newpal : 
-	p.append((0,0,0,0))
-	p.append((0,0,0,0))
+	p += ((0,0,0,0),)*(512-len(p))
 
 # debug palettes
 if DEBUG : 

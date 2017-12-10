@@ -18,7 +18,7 @@ flags    = 'flag1 flag2 flag3 bullet1 bullet2 bullet3'.split()
 resources = 'gold iron coal wood food'.split()
 tags      = 'hurt surrender medal1 medal2 medal3'.split()
 misc      = 'skull magic1 magic2 swirl1 swirl2 explo1 explo2 explo3 mouse bzz'.split()
-menus 	  = 'bg harvest attack'.split()
+menus 	  = 'bg harvest attack empty'.split()
 MOV_DEFAULT = 1
 ATTACK_DEFAULT=0
 
@@ -67,9 +67,8 @@ def damage(of,to) :
 	}
 	return att.get((of,mtype),ATTACK_DEFAULT)
 
-def distance(unit, terrain) : # attack distance
-	return 1
-
+def unit_attack_range(u) : 	
+	return (0,1) if u!='catapult' else (2,8)
 
 # Headers 
 # ---------------------------------
@@ -122,9 +121,9 @@ print '};'
 
 
 # other named tiles in tileset
-for t in ('wood','zero'):  
+for t in ('wood','zero','P1'):  
 	elt = tsx.find('tile[@type="%s"]'%t)
-	print "#define tile_%s %s"%(t,elt.get('id'))
+	print "#define tile_%s %d"%(t,int(elt.get('id'))+1)
 
 # menus 
 for i,m in enumerate(menus) : 
@@ -147,12 +146,12 @@ for i in range((cnt+col-1)//col) :
 print '};'
 
 # terrain names
-print "char *terrain_names[] = {"
+print "const char *terrain_names[] = {"
 for t in terrains : 
 	print "  \"%s\","%t
 print '};'
 # unit names
-print "char *unit_names[] = {"
+print "const char *unit_names[] = {"
 for u in units : 
 	print "  \"%s\","%u
 print '};'
@@ -181,7 +180,14 @@ print 'const uint8_t unit_damage_table[%d][%d]={'%(len(units),len(units))
 for u_of in units : 
 	print '  {%s}, // %s'%(','.join(str(damage(u_of,u_to)) for u_to in units),u_of)
 print '};'
-# fixme unit_range 
+
+# unit/unit attack range in tiles
+print 'const uint8_t unit_attack_range_table[%d][2]={'%(len(units))
+for u in units : 
+	r = unit_attack_range(u)
+	print '  {%d, %d}, // %s'%(r[0],r[1],u)
+print '};'
+
 # fixme unit damages on buildings
 
 # map units 
@@ -193,7 +199,7 @@ firstgid_units = int(units_ts.get('firstgid'))
 tmap_w = int(tmx.get('width'))
 print '// ----'
 print '// Units initial positions by level'
-print "uint8_t level_units[][32][4] = { // N levels, units, {x,y,type 1-16, color}"
+print "const uint8_t level_units[][32][4] = { // N levels, units, {x,y,type 1-16, color}"
 for l in tmx.findall('layer') : 
 	if l.get('name').endswith('_units') and l.get('name').startswith('_level'): 
 		dat = l.find('data')

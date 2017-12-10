@@ -2,6 +2,8 @@
 #include "data.h"
 #include "tinystrat.h"
 
+#include <stdlib.h> // abs
+
 static inline void unit_remove(uint8_t uid) 
 {
     blitter_remove(game_info.units[uid]);
@@ -11,29 +13,29 @@ static inline void unit_remove(uint8_t uid)
 }
 
 
-static inline int unit_get_type  (object *unit) // return unit_id
+static inline int unit_get_type  (int unit) // return unit_id
 { 
-	return (unit->fr)/8; 
+	return (game_info.units[unit]->fr)/8; 
 } 
 
-static inline void unit_set_type (object *unit, int unit_id) 
+static inline void unit_set_type (int unit, int typeunit_id) 
 { 
-	unit->fr = unit_id*8; 
+	game_info.units[unit]->fr = typeunit_id*8; 
 } 
 
 // frame 0-1, direction nsew
-static inline void unit_set_frame (object *unit, int direction, int frame)
+static inline void unit_set_frame (int unit, int direction, int frame)
 {
-	unit->fr = (unit->fr & ~7) | direction*2 | frame;
+	game_info.units[unit]->fr = (game_info.units[unit]->fr & ~7) | direction*2 | frame;
 }
 
-static inline int unit_get_palette (object *unit) 
+static inline int unit_get_palette (int unit) 
 { 
-	return (unit->b - (uintptr_t) data_palettes_bin ) / 1024;
+	return (game_info.units[unit]->b - (uintptr_t) data_palettes_bin ) / 1024;
 }
-static inline void unit_set_palette(object *unit, int palette)
+static inline void unit_set_palette(int unit, int palette)
 {
-	unit->b = (uintptr_t)&data_palettes_bin[1024*palette];  
+	game_info.units[unit]->b = (uintptr_t)&data_palettes_bin[1024*palette];  
 }
 
 static inline void unit_set_health(uint8_t unit_id, uint8_t health)
@@ -46,38 +48,52 @@ static inline uint8_t unit_get_health(uint8_t unit_id)
     return game_info.units_health[unit_id]->fr - fr_misc_0;
 }
 
-static inline int  unit_get_player(object *unit) { 
+static inline int  unit_get_player(int unit) { 
 	return unit_get_palette(unit)%4; 
 }
 
 
 // also reset moved
-static inline void unit_set_player(object *unit, int player) 
+static inline void unit_set_player(int unit, int player) 
 { 
 	unit_set_palette(unit, player);
 }  
 
-static inline int  unit_has_moved (object *unit) 
+static inline int  unit_has_moved (int unit) 
 { 
 	return unit_get_palette(unit)/4; 
 }
 
-static inline void unit_set_moved (object *unit) 
+static inline void unit_set_moved (int unit) 
 { 
 	unit_set_palette(unit, unit_get_player(unit)+4 );
 }
 
-static inline void unit_reset_moved (object *unit) 
+static inline void unit_reset_moved (int unit) 
 {
 	unit_set_palette(unit, unit_get_player(unit));
 }
 
+// get manhattan distance between two units
+static inline uint8_t unit_get_mdistance(int a,int b) 
+{
+    const object *ua = game_info.units[a];
+    const int ax = (ua->x%1024)/16;
+    const int ay = (ua->y%1024)/16;
+
+    const object *ub = game_info.units[b];
+    const int bx = (ub->x%1024)/16;
+    const int by = (ub->y%1024)/16;
+
+    return abs(ax-bx)+abs(ay-by);
+}
+
 // get the terrain type the unit is on
-static inline uint8_t unit_get_terrain (object *unit)
+static inline uint8_t unit_get_terrain (int unit)
 {
     // modulo 1024 : OK hidden or not
-    const int tx = (unit->x%1024)/16;
-    const int ty = (unit->y%1024)/16;
+    const int tx = (game_info.units[unit]->x%1024)/16;
+    const int ty = (game_info.units[unit]->y%1024)/16;
     return tile_terrain[game_info.vram[ty*SCREEN_W+tx]];
 }
 
@@ -99,12 +115,11 @@ static inline void unit_show(uint8_t uid)
 
 void unit_info(uint8_t uid) 
 {
-    object *unit = game_info.units[uid];
     message ("unit:%d - player:%d type:%s on terrain:%s\n", 
             uid, 
-            unit_get_player(unit), 
-            unit_names[unit_get_type(unit)],
-            terrain_names[unit_get_terrain(unit)]
+            unit_get_player(uid), 
+            unit_names[unit_get_type(uid)],
+            terrain_names[unit_get_terrain(uid)]
             );
 }
 
@@ -115,11 +130,10 @@ given attack types and attacked unit terrain defense
 int unit_attack_damage(uint8_t from, uint8_t to)
 {
     // base percentage attacking -> attacked types : 0-5
-    int attack = unit_damage_table [unit_get_type(game_info.units[from])] \
-        [unit_get_type(game_info.units[to])] ; 
+    int attack = unit_damage_table [unit_get_type(from)][unit_get_type(to)] ; 
 
     // defense of the terrain the attacked unit is on 1-5
-    int defense = terrain_defense[unit_get_terrain(game_info.units[to])]; 
+    int defense = terrain_defense[unit_get_terrain(to)]; 
     message("attack %d def %d res: %d\n",attack,defense,attack*51 * (6-defense)/6);
     return attack*51 * (6-defense)/6;
 }
@@ -142,10 +156,10 @@ uint8_t unit_new (uint8_t x, uint8_t y, uint8_t type, uint8_t player_id )
     // allocate sprite
     // put below cursors
     object *o =sprite3_new( data_units_16x16_spr, x*16, y*16, 5 ); 
-
     game_info.units[uid] = o;
-    unit_set_type(o,type);
-    unit_set_player(o,player_id);
+
+    unit_set_type(uid,type);
+    unit_set_player(uid,player_id);
 
     // top of prec, below mouse_cursor
     object *oh=sprite3_new(data_misc_16x16_spr, x*16, y*16, 4); 

@@ -8,7 +8,8 @@ TERRAINS :=  mountains forest town fields stable sea beach \
 	castle camp road plain river
 
 DATAFILES := tiles_bg.tset map.map palettes.bin \
-	sprites/units_16x16.spr sprites/misc_16x16.spr sprites/faces_26x26.spr
+	sprites/units_16x16.spr sprites/misc_16x16.spr sprites/faces_26x26.spr \
+	sprites/fight_200x200.spr sprites/bignum_16x24.spr
 INTRO := tiny bg horse_left horse_right objects_left objects_right wars 
 
 DATAFILES += $(TERRAINS:%=sprites/bg_%.spr)
@@ -43,7 +44,7 @@ data.h: $(DATAFILES)
 %.spr : %.png
 	$(GRSCRIPTS)/mk_spr.py $< -p COUPLES -o $*.spr
 
-palettes.bin : units_16x16.spr
+palettes.bin : sprites/units_16x16.spr
 	python mk_pals.py 
 
 defs.h: mk_defs.py tiles_bg.tsx map.tmx
@@ -54,5 +55,5 @@ defs.h: mk_defs.py tiles_bg.tsx map.tmx
 
 clean::
 	rm -f $(DATAFILES) _debug.png 
-	rm -f defs.h tiles_bg.h data.h map.h $(NAME)_sdl
+	rm -f defs.h tiles_bg.h data.h map.h $(NAME)_sdl palettes.bin
 
