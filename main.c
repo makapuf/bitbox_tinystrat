@@ -14,11 +14,10 @@
 #include "defs.h"
 #undef DEFS_IMPLEMENTATION
 
-
-#include "tinystrat.h"
+#define UNITS_IMPLEMENTATION
 #include "units.h"
 
-
+#include "tinystrat.h"
 
 // sine, -128:128 with angle from 0 to 64
 int8_t sinus(int x)
@@ -143,7 +142,7 @@ void load_level(int map)
         }
     }
 
-    game_info.face = sprite3_new(data_faces_26x26_spr,0,-6,5);
+    face_init();
 }
 
 // global game element init
@@ -232,7 +231,7 @@ void move_cursor(uint16_t gamepad_pressed)
     if (mouse_cursor->x>VGA_H_PIXELS) mouse_cursor->x = VGA_H_PIXELS;
     if (mouse_cursor->y>VGA_V_PIXELS) mouse_cursor->y = VGA_V_PIXELS;       
     
-    // square mouse_cursor, mouve on click
+    // square mouse_cursor, move on click
     if (mouse_buttons & mousebut_left) {    
         cursor->x = mouse_cursor->x & ~0xf;
         cursor->y = mouse_cursor->y & ~0xf;
@@ -320,6 +319,7 @@ unsigned int menu(int menu_id, int nb_choices)
 int select_unit( void )
 {
     uint16_t pressed;
+    game_info.avatar_state = face_hud;
 
     // wait till button A pressed on one of my units.
     while(1) {
@@ -327,6 +327,7 @@ int select_unit( void )
             pressed  = gamepad_pressed();
             move_cursor(pressed);
             update_cursor_info();
+            face_frame();
 
             wait_vsync(1);
 
@@ -384,10 +385,19 @@ char * select_destination( int select_id )
         // cancel
         if (pressed & gamepad_B)
             return 0;
-        message("%d\n",game_info.cursor_unit);
 
-        if (game_info.cursor_unit==-1) {
+        if (game_info.cursor_unit==-1) { // check no unit on dest. tile/ within range
+
+            // get target destination
             int dest = cursor_position();
+            struct Cell dest_cell = cost_array[dest];
+            message ("target distance : %d\n",dest_cell.cost);
+            if (cell_isempty(dest_cell)) {
+                message("Error, too far\n");
+                continue;
+            }
+
+            // fixme build path
             char *p = path;
             // DUMMY path : manhattan simple
             // use astar then
@@ -428,11 +438,13 @@ int select_attack_target(int attack_unit)
         if (unit_get_player(i) == game_info.current_player) continue; // same player
         // unit within reach 
         const int dist = unit_get_mdistance(attack_unit,i);
-        if (dist >= unit_attack_range_table[attack_unit][0] && \
-            dist <= unit_attack_range_table[attack_unit][1]) {
+        const int attack_type = unit_get_type(attack_unit);
+
+        if (dist >= unit_attack_range_table[attack_type][0] && \
+            dist <= unit_attack_range_table[attack_type][1]) {
             targets[nbtargets++]=i; 
             message("possible target : %d\n",i);
-        }
+        } 
     }
     // check any ?
     if (nbtargets==0) return -1;
@@ -463,8 +475,8 @@ int select_attack_target(int attack_unit)
 
 }
 
-// true if unit died
-static void do_attack(int attacking_unit, int attacked_unit, bool right_to_left)
+// return damage
+static int do_attack(int attacking_unit, int attacked_unit, bool right_to_left)
 {   
     message("unit %d attacks %d,",attacking_unit,attacked_unit);
     unit_info(attacking_unit);
@@ -478,6 +490,7 @@ static void do_attack(int attacking_unit, int attacked_unit, bool right_to_left)
     message("inflicting %d damage\n",damage);
     uint8_t h = unit_get_health(attacked_unit);
     unit_set_health(attacked_unit, h>damage ? h-damage : 0); // do not remove unit yet, anims not done 
+    return damage;
 }
 
 void combat (int attacking_unit, int attacked_unit) 
@@ -491,38 +504,45 @@ void combat (int attacking_unit, int attacked_unit)
     uint8_t attacking_terrain = unit_get_terrain(attacking_unit);
     message("attacking terrain %d\n",attacking_terrain);
     object *bg_left  = sprite3_new(terrain_bg_table[attacking_terrain],  0,-200,35); 
-    object *attacking_sprite = sprite3_new( data_units_16x16_spr, 30, 130, 5 );
+    object *attacking_sprite = sprite3_new( data_units_16x16_spr, -30, 150, 5 );
     attacking_sprite->d |= 1; // set render 2X 
     attacking_sprite->h *= 2;
     attacking_sprite->fr = unit_get_type(attacking_unit)*8;
-    object *attacking_life = sprite3_new(data_bignum_16x24_spr, 10,220,5);
-    attacking_life->fr = unit_get_health(attacked_unit);
+    object *attacking_life = sprite3_new(data_bignum_16x24_spr, 34,52,5);
+    attacking_life->fr = unit_get_health(attacking_unit);
+    game_info.avatar_state = face_idle;
+    sprite_set_palette(attacking_sprite, unit_get_player(attacking_unit));
 
     uint8_t attacked_terrain = unit_get_terrain(attacked_unit);
     message("attacked terrain %d\n",attacked_terrain);
     object *bg_right = sprite3_new(terrain_bg_table[attacked_terrain ],200, 300,35); 
-    object *attacked_sprite = sprite3_new( data_units_16x16_spr, 330, 130, 5 );
+    object *attacked_sprite = sprite3_new( data_units_16x16_spr, 410, 150, 5 );
     attacked_sprite->d |= 1; // set render 2X 
     attacked_sprite->h *= 2;
-    // fixme set player color
     attacked_sprite->fr = unit_get_type(attacked_unit)*8 + 3; // facing left
-    object *attacked_life = sprite3_new(data_bignum_16x24_spr, 380,220,5);
+    object *attacked_life = sprite3_new(data_bignum_16x24_spr, 340,52,5);
     attacked_life->fr = unit_get_health(attacking_unit);
+    sprite_set_palette(attacked_sprite, unit_get_player(attacked_unit));
+
+    set_adversary_face(unit_get_player(attacked_unit));
 
     // also other units ...  
 
     // intro
     for (int i=0;i<25;i++) {
+        face_frame();
         bg_left ->y+=10;
         bg_right->y-=10;
         wait_vsync(1);        
     }
-    for (int i=0;i<25;i++) {
+    for (int i=0;i<80;i++) {
         attacking_sprite->x+=2;
+        face_frame();
         wait_vsync(1);        
     }
-    for (int i=0;i<25;i++) {
+    for (int i=0;i<80;i++) {
         attacked_sprite->x-=2;
+        face_frame();
         wait_vsync(1);        
     }
 
@@ -530,18 +550,45 @@ void combat (int attacking_unit, int attacked_unit)
     // wait keypress
     object *fight_spr = sprite3_new(data_fight_200x200_spr,100,50,3);
     static const uint8_t fight_anim[8] = {0,1,2,1,3,0,2,1};
-    while (1) {
-        int pressed = gamepad_pressed();
-        if (pressed && gamepad_A) break;
+    for (int i=0;i<60;i++) {
         fight_spr->fr = fight_anim[(vga_frame/16)%8];
         wait_vsync(1);
     }
     blitter_remove(fight_spr);
 
-    do_attack(attacking_unit, attacked_unit, true);
+    int dmg_given = do_attack(attacking_unit, attacked_unit, true);
 
-    if (unit_get_health(attacked_unit)>0)
-        do_attack(attacked_unit, attacking_unit, false);
+    if (unit_get_health(attacked_unit)>0) {
+        int dmg_received = do_attack(attacked_unit, attacking_unit, false);
+        game_info.avatar_state = dmg_given>dmg_received ? face_laugh : face_cry;
+    } else {
+        game_info.avatar_state = face_laugh;        
+    }
+
+    // idle animation : anim update scores, faces
+    for (int i=0;i<15;i++) {
+        // hide old scores
+        attacking_life->x -=2;
+        attacked_life->x +=2;
+        face_frame();
+        wait_vsync(1);
+    }
+    attacking_life->fr = unit_get_health(attacking_unit);
+    attacked_life->fr  = unit_get_health(attacked_unit);
+    for (int i=0;i<15;i++) {
+        attacking_life->x+=2;
+        attacked_life->x-=2;
+        face_frame();
+        wait_vsync(1);
+    }
+
+    // wait for keypress
+    while (1) {
+        int pressed = gamepad_pressed();
+        if (pressed && gamepad_A) break;
+        face_frame();
+        wait_vsync(1);
+    }
 
     // outro - quicker
     while (bg_left->y > -150 ) {
@@ -549,6 +596,7 @@ void combat (int attacking_unit, int attacked_unit)
         bg_right->y+=16;
         wait_vsync(1);
     }
+
     blitter_remove(bg_left);
     blitter_remove(bg_right);
     blitter_remove(attacking_sprite);
@@ -590,16 +638,17 @@ void game_turn()
     }
 
     while (1) {
-        // to face/general code ?
-        game_info.face->fr = game_info.player_avatar[game_info.current_player]*5; 
-        game_info.face->x = 0; 
-        game_info.face->y = -6; 
-        game_info.face->h = 21; 
-
         int select_id = select_unit();
         message("selected unit %d\n",select_id);
 
         if (game_info.finished_turn) break; // end of turn : exit loop
+
+        update_pathfinding(select_id);
+
+        /* FIXME : paint all vram wiith attainable tiles. */
+        // Do it when B button pressed on unit 
+        color_map_movement_range(select_id);
+        // reload map
 
         // show it
         char *path = select_destination(select_id);
@@ -649,7 +698,7 @@ void game_turn()
                 if (action==1) action = 2;
                }
         } else {
-            action = menu(MENU_ATTACK,3); // if there is anything to attack ? 
+            action = menu(MENU_ATTACK,3); // only if there is anything to attack !
         }
 
 
@@ -688,7 +737,6 @@ void game_turn()
         unit_set_moved (select_id);
     }
     message("- End of turn\n");
-
 }
 
 
@@ -704,6 +752,13 @@ void game_next_player()
         game_info.finished_game = 1;
     else
         game_info.current_player = next;
+
+    object *next_spr = sprite3_new(data_next_player_spr,0,130,0);
+    for (next_spr->x=-30;next_spr->x<400+100;next_spr->x+=4) {
+        wait_vsync(1);
+    }
+    blitter_remove(next_spr);
+    // also move player face ?
 }
 
 void bitbox_main()

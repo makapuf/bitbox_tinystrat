@@ -70,6 +70,9 @@ def damage(of,to) :
 def unit_attack_range(u) : 	
 	return (0,1) if u!='catapult' else (2,8)
 
+def unit_distance_range(u) : 
+	return {'foot':2,'guard2':2,'wheels':4,'horse':6,'boat':6}[unit_type(u)]
+
 # Headers 
 # ---------------------------------
 print '#ifndef DEFS_DEFINITION'
@@ -79,6 +82,7 @@ print "enum {"
 for t in terrains : 
 	print '    terrain_%s,'%t
 print '};'
+print '#define NB_TERRAINS %d'%len(terrains)
 
 # -- units 
 
@@ -91,6 +95,7 @@ print "enum {"
 for u in units : 
 	print "    unit_%s,"%u
 print "};"
+print '#define NB_UNITS %d'%len(units)
 
 print '// ---- Frames'
 print '// - sprite units (colored)'
@@ -121,7 +126,7 @@ print '};'
 
 
 # other named tiles in tileset
-for t in ('wood','zero','P1'):  
+for t in ('wood','zero','P1','mark'):  
 	elt = tsx.find('tile[@type="%s"]'%t)
 	print "#define tile_%s %d"%(t,int(elt.get('id'))+1)
 
@@ -129,7 +134,15 @@ for t in ('wood','zero','P1'):
 for i,m in enumerate(menus) : 
 	print "#define MENU_%s %d"%(m.upper(),i)
 
-print '#endif'
+print 'extern const uint8_t tile_terrain[];'
+print 'extern const char * unit_names[];'
+print 'extern const char * terrain_names[];'
+print 'extern const uint8_t unit_damage_table[][NB_UNITS];'
+print 'extern const uint8_t terrain_defense[];'
+print 'extern const uint8_t terrain_move_cost[][NB_TERRAINS];'
+print 'extern const uint8_t unit_movement_range_table[];'
+
+print '#endif\n'
 
 
 # Implementation 
@@ -182,13 +195,18 @@ for u_of in units :
 print '};'
 
 # unit/unit attack range in tiles
-print 'const uint8_t unit_attack_range_table[%d][2]={'%(len(units))
+print 'const uint8_t unit_attack_range_table[%d][2]={'%len(units)
 for u in units : 
 	r = unit_attack_range(u)
 	print '  {%d, %d}, // %s'%(r[0],r[1],u)
 print '};'
 
-# fixme unit damages on buildings
+# unit travel distance
+print 'const uint8_t unit_movement_range_table[%d]={'%len(units)
+for u in units : 
+	r = unit_distance_range(u)
+	print '    %d, // %s'%(r,u)
+print '};'
 
 # map units 
 # --------------------------
@@ -211,10 +229,11 @@ for l in tmx.findall('layer') :
 		print '    {'
 		for id,item in items : 
 			color = item/16
-			unit  = 1+item%16
+			unit  = item%16
+			if unit==15 : continue # flag : fixme special
 			x = id%tmap_w
 			y = id/tmap_w
-			print "        {%d,%d,unit_%s,color_%s},"%(x,y,units[unit],colors[color])
+			print "        {%d,%d,unit_%s+1,color_%s},"%(x,y,units[unit],colors[color])
 		print '    },'
 
 print "};"

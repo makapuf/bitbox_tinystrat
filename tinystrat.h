@@ -1,12 +1,16 @@
 // tinystrat header file
 #pragma once
+#include <stdbool.h>
+
+#include "sdk/lib/blitter/blitter.h"
+
 #define SCREEN_W 25
 #define SCREEN_H 19
 
 #define MENU_X 10
 #define MENU_Y 5
 
-#define MAX_UNITS 32
+#define MAX_UNITS 32 // total max number of units on screen
 
 enum Player_type_enum {
     player_notused,
@@ -15,6 +19,14 @@ enum Player_type_enum {
     player_off, // abandoned game but still present
 };
 
+enum Face_State {
+    face_idle, 
+    face_laugh,
+    face_talk,
+    face_cry,
+    face_hud,
+    face_off,
+};
 
 struct GameInfo {
 	uint8_t map_id;
@@ -44,14 +56,17 @@ struct GameInfo {
 
     object *map;		// BG
     object *cursor;
-    object *face;   // commander 
+
+    object *face[2];       // for avatars : player / adversary
+    enum Face_State avatar_state; // current player 
+
 
 } game_info;
 
 
 // Map
 /*
-map 0..N (id):
+TODO : map 0..N (id):
     icone/nom pour choix menu
     type : 2P, 3P, 4P -> deduit 
     campaign
@@ -67,3 +82,33 @@ map 0..N (id):
     map_get
 */
 
+// Faces
+void face_init(void);
+void face_frame(void);
+void set_adversary_face(int); // set with player id
+
+
+// -- path finding structures and functions
+
+struct Cell {
+    unsigned cost:6;
+    unsigned pos:10;
+};
+#define MAX_COST 63 // 6 bits
+#define FRONTIER_SIZE 32 // max elements in frontier
+
+bool cell_isempty(const struct Cell c);
+
+extern struct Cell cost_array[SCREEN_W* SCREEN_H]; // cost, come_from
+extern struct Cell frontier  [FRONTIER_SIZE];      // cost, position
+
+// updates cost_array and frontier
+// from source, up to max_cost (included)
+void update_pathfinding ( int source );
+
+// once cost_array has been created, find the path from an array
+void reconstruct_path(int src, int dst);
+
+// color whole map with attainable spots.
+// must call update pathfinding before
+void color_map_movement_range();

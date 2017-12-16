@@ -125,7 +125,7 @@
  <tile id="30" terrain="7,7,7,7"/>
  <tile id="31" terrain="7,7,7,7"/>
  <tile id="32" terrain="0,0,0,0"/>
- <tile id="34" terrain="7,7,7,7"/>
+ <tile id="34" type="mark" terrain="7,7,7,7"/>
  <tile id="37" terrain="8,8,8,8"/>
  <tile id="38" terrain="8,8,8,8"/>
  <tile id="39" terrain="8,8,8,8"/>

@@ -1,6 +1,7 @@
 // Units
 #include "data.h"
 #include "tinystrat.h"
+#include "defs.h"
 
 #include <stdlib.h> // abs
 
@@ -29,13 +30,18 @@ static inline void unit_set_frame (int unit, int direction, int frame)
 	game_info.units[unit]->fr = (game_info.units[unit]->fr & ~7) | direction*2 | frame;
 }
 
+static inline void sprite_set_palette(object *spr, int palette)
+{
+    spr->b = (uintptr_t)&data_palettes_bin[1024*palette];  
+}
+
 static inline int unit_get_palette (int unit) 
 { 
 	return (game_info.units[unit]->b - (uintptr_t) data_palettes_bin ) / 1024;
 }
 static inline void unit_set_palette(int unit, int palette)
 {
-	game_info.units[unit]->b = (uintptr_t)&data_palettes_bin[1024*palette];  
+	sprite_set_palette(game_info.units[unit], palette);
 }
 
 static inline void unit_set_health(uint8_t unit_id, uint8_t health)
@@ -88,13 +94,18 @@ static inline uint8_t unit_get_mdistance(int a,int b)
     return abs(ax-bx)+abs(ay-by);
 }
 
+// gets position of a unit by ID
+static inline uint16_t unit_get_pos(int id)
+{
+    const object *u = game_info.units[id];
+    return u->y/16 * SCREEN_W + u->x/16;
+}
+
 // get the terrain type the unit is on
 static inline uint8_t unit_get_terrain (int unit)
 {
     // modulo 1024 : OK hidden or not
-    const int tx = (game_info.units[unit]->x%1024)/16;
-    const int ty = (game_info.units[unit]->y%1024)/16;
-    return tile_terrain[game_info.vram[ty*SCREEN_W+tx]];
+    return tile_terrain[game_info.vram[unit_get_pos(unit)]];
 }
 
 static inline void unit_hide(uint8_t uid) 
@@ -112,6 +123,12 @@ static inline void unit_show(uint8_t uid)
         game_info.units_health[uid]->y &= ~1024;
     }
 }
+
+void unit_info(uint8_t uid);
+int unit_attack_damage(uint8_t from, uint8_t to);
+uint8_t unit_new (uint8_t x, uint8_t y, uint8_t type, uint8_t player_id );
+
+#ifdef UNITS_IMPLEMENTATION
 
 void unit_info(uint8_t uid) 
 {
@@ -170,3 +187,5 @@ uint8_t unit_new (uint8_t x, uint8_t y, uint8_t type, uint8_t player_id )
     message("init unit %d at %d,%d : typ %d color %d\n",uid, o->x, o->y, type, player_id);
     return uid;
 }
+
+#endif 
