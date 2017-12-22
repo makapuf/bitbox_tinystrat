@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" tiledversion="2017.07.26" orientation="orthogonal" renderorder="right-down" width="25" height="19" tilewidth="16" tileheight="16" nextobjectid="51">
+<map version="1.0" tiledversion="2017.07.26" orientation="orthogonal" renderorder="right-down" width="25" height="19" tilewidth="16" tileheight="16" nextobjectid="57">
  <tileset firstgid="1" source="tiles_bg.tsx"/>
  <tileset firstgid="218" name="units" tilewidth="16" tileheight="16" tilecount="64" columns="16">
   <image source="map_units.png" trans="ff00da" width="256" height="64"/>
@@ -12,10 +12,10 @@
     <frame tileid="1" duration="500"/>
    </animation>
   </tile>
-  <tile id="4">
+  <tile id="5">
    <animation>
-    <frame tileid="4" duration="300"/>
-    <frame tileid="7" duration="1000"/>
+    <frame tileid="5" duration="500"/>
+    <frame tileid="5" duration="500"/>
    </animation>
   </tile>
   <tile id="8">
@@ -25,10 +25,28 @@
    </animation>
   </tile>
  </tileset>
- <layer name="level0" width="25" height="19">
+ <tileset firstgid="307" name="units_16x16" tilewidth="16" tileheight="16" tilecount="128" columns="8">
+  <image source="sprites/units_16x16.png" trans="ff00da" width="128" height="256"/>
+  <tile id="0">
+   <animation>
+    <frame tileid="0" duration="300"/>
+    <frame tileid="1" duration="300"/>
+   </animation>
+  </tile>
+  <tile id="112">
+   <animation>
+    <frame tileid="112" duration="133"/>
+    <frame tileid="113" duration="133"/>
+    <frame tileid="114" duration="133"/>
+    <frame tileid="115" duration="133"/>
+    <frame tileid="116" duration="133"/>
+   </animation>
+  </tile>
+ </tileset>
+ <layer name="level0" width="25" height="19" visible="0">
   <data encoding="csv">
 162,162,199,11,168,211,176,163,162,165,167,168,209,179,162,165,204,182,205,176,206,177,207,182,216,
-1,1,1,1,1,1,1,1,1,1,127,113,129,1,1,1,1,1,1,1,1,1,1,1,1,
+1,1,1,1,91,1,1,1,1,1,127,113,129,1,1,1,1,1,1,1,1,1,1,1,1,
 13,13,1,1,1,1,1,1,13,1,134,126,136,11,1,1,1,1,1,11,13,1,1,11,13,
 11,1,1,1,2,2,2,1,1,1,1,99,1,1,11,1,1,1,1,1,11,1,1,1,11,
 1,1,1,2,2,2,1,1,1,6,1,99,1,1,27,11,11,1,2,1,1,1,1,1,1,
@@ -38,8 +56,8 @@
 14,14,2,1,1,19,1,1,5,1,7,99,1,11,13,13,26,11,1,1,1,2,2,1,1,
 14,1,49,49,1,1,1,1,1,1,2,99,1,11,11,11,33,143,144,144,144,144,1,144,144,
 14,1,49,49,1,30,1,1,1,7,2,99,1,1,11,1,1,146,1,2,1,1,2,2,1,
-14,1,1,5,1,11,1,1,6,1,2,109,1,1,1,1,1,153,1,2,1,1,143,144,145,
-14,1,1,1,1,1,1,5,7,2,2,99,1,1,1,13,1,153,1,2,1,1,150,133,146,
+14,1,1,5,1,11,1,1,6,1,2,109,1,1,1,1,1,150,1,2,1,1,143,144,145,
+14,1,1,1,1,1,1,5,7,2,2,99,1,1,1,13,1,146,1,2,1,1,150,133,146,
 1,1,11,1,1,1,1,7,1,2,1,99,1,1,13,1,1,150,1,1,2,1,146,140,152,
 1,1,1,1,1,1,1,1,1,1,5,99,1,1,13,13,1,150,1,2,2,1,157,158,159,
 121,121,121,121,121,121,121,121,121,121,121,125,121,121,121,121,121,121,121,121,121,121,121,121,121,
@@ -62,7 +80,7 @@
 0,0,241,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,250,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,238,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,281,0,
+0,0,0,0,238,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,265,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,273,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -117,7 +135,9 @@
 0,0,0,0,0,0,0,0,0,0,0,256,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <objectgroup name="_objects">
+ <objectgroup name="_objects" visible="0">
   <object id="47" gid="302" x="0" y="20" width="26" height="26"/>
+  <object id="52" gid="419" x="368" y="208" width="16" height="16"/>
+  <object id="55" gid="287" x="263" y="21" width="26" height="26"/>
  </objectgroup>
 </map>

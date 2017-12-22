@@ -13,7 +13,7 @@ tile2terrain = {
 colors   = 'blue red yellow green'.split()
 units    = 'farmer farmer_f soldier soldier_f archer guard guard2 catapult belier tower horse knight boat'.split() # in order horizontally
 cursors  = 'cursor cursor2 left right down up'.split()
-flags    = 'flag1 flag2 flag3 bullet1 bullet2 bullet3'.split()
+flags    = 'flag1 flag2 flag3 flag4 flag5 bullet1 bullet2 bullet3'.split()
 
 resources = 'gold iron coal wood food'.split()
 tags      = 'hurt surrender medal1 medal2 medal3'.split()
@@ -71,7 +71,7 @@ def unit_attack_range(u) :
 	return (0,1) if u!='catapult' else (2,8)
 
 def unit_distance_range(u) : 
-	return {'foot':2,'guard2':2,'wheels':4,'horse':6,'boat':6}[unit_type(u)]
+	return {'foot':5,'guard2':5,'wheels':4,'horse':10,'boat':10}[unit_type(u)]
 
 # Headers 
 # ---------------------------------
@@ -140,6 +140,8 @@ print 'extern const char * terrain_names[];'
 print 'extern const uint8_t unit_damage_table[][NB_UNITS];'
 print 'extern const uint8_t terrain_defense[];'
 print 'extern const uint8_t terrain_move_cost[][NB_TERRAINS];'
+print 'extern const uint8_t terrain_move_cost[][NB_TERRAINS];'
+print 'extern const uint8_t unit_attack_range_table[][2];'
 print 'extern const uint8_t unit_movement_range_table[];'
 
 print '#endif\n'

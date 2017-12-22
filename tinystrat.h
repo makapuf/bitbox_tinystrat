@@ -87,6 +87,13 @@ void face_init(void);
 void face_frame(void);
 void set_adversary_face(int); // set with player id
 
+uint16_t gamepad_pressed(void);
+void combat (int attacking_unit, int attacked_unit);
+void draw_hud( void );
+
+// human
+void human_game_turn(void);
+
 
 // -- path finding structures and functions
 
