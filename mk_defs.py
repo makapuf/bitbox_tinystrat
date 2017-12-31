@@ -28,7 +28,6 @@ def unit_type(unit) :
 		('belier','catapult','tower') : 'wheels',
 		('horse','knight') : 'horse',
 		('boat',) : 'boat',
-		('guard2',) : 'guard2',
 	}
 	for k,v in MTYPES.items() : 
 		if unit in k : 
@@ -46,32 +45,27 @@ def damage(of,to) :
 	This function defines the attack level of a unit on another.
 	'''
 	mtype=unit_type(to)
-
+	of = of.rsplit('_',1)[0] # removes _f
 	att = {
-		('soldier','foot') : 1,
-		('soldier','wheels') : 1,
-		('soldier','horse') : 1,
-		('soldier','guard2') : 1,
-		('soldier','boat') : 1,
-		
-		('soldier_f','foot') : 1,
-		('soldier_f','wheels') : 1,
-		('soldier_f','horse') : 1,
-		('soldier_f','guard2') : 1,
-		('soldier_f','boat') : 1,
+		('soldier','foot') : 3,
+		('soldier','wheels') : 3,
+		('soldier','horse') : 3,
+		('soldier','boat') : 3,
 
-		('archer','foot') : 2,
-		('boat','boat') : 1,
-		('guard','foot') : 2,
-		('guard2','foot') : 4,
+		('archer','foot') : 5,		
+		('boat','boat') : 3,
+		('guard','foot') : 6,
 	}
 	return att.get((of,mtype),ATTACK_DEFAULT)
 
 def unit_attack_range(u) : 	
-	return (0,1) if u!='catapult' else (2,8)
+	u2 = u.split('_')[0]
+	if u2=='farmer' : return (0,0)
+	if u2=='catapult' : return (2,8)
+	return (0,1)
 
 def unit_distance_range(u) : 
-	return {'foot':5,'guard2':5,'wheels':4,'horse':10,'boat':10}[unit_type(u)]
+	return {'foot':5,'wheels':4,'horse':10,'boat':10}[unit_type(u)]
 
 # Headers 
 # ---------------------------------

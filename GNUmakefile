@@ -15,7 +15,7 @@ SPRITES := units_16x16 misc_16x16 faces_26x26 fight_200x200 bignum_16x24 \
 DATAFILES := tiles_bg.tset map.map palettes.bin music/song.mod \
 	$(SPRITES:%=sprites/%.spr)
 
-GAME_C_FILES = main.c faces.c pathfinding.c player.c \
+GAME_C_FILES = main.c faces.c pathfinding.c player.c grid.c \
 	lib/blitter/blitter.c \
 	lib/blitter/blitter_tmap.c \
 	lib/blitter/blitter_sprites3.c \

@@ -3,7 +3,6 @@
 #include "units.h"
 
 
-#define MAX_PATH 16
 char path[MAX_PATH]; // path = string of NSEW or NULL for abort
 // fixme remove 
 
@@ -162,9 +161,9 @@ int select_unit( void )
 }
 
 
-char * select_destination( int select_id )
+int select_destination( int select_id )
 {
-    int start = cursor_position();
+    // int start = cursor_position();
 
     uint16_t pressed;
     // wait till button A pressed and on an empty space
@@ -181,11 +180,13 @@ char * select_destination( int select_id )
 
             move_cursor(pressed);
             update_cursor_info();
+            color_grid_movement_range();
 
             wait_vsync(1);
             if (pressed & gamepad_A) break;
             if (pressed & gamepad_B) break;
         }
+        grid_empty();
 
         // cancel
         if (pressed & gamepad_B)
@@ -199,60 +200,27 @@ char * select_destination( int select_id )
             message ("target distance : %d\n",dest_cell.cost);
             if (cell_isempty(dest_cell)) {
                 message("Error, too far\n");
+                // error sound
                 continue;
             }
 
-            // fixme build path
-            char *p = path;
-            // DUMMY path : manhattan simple
-            // use astar then
-            while (start != dest) {
-                if (dest/SCREEN_W-start/SCREEN_W >0) {
-                    *p++ = 'S';
-                    start += SCREEN_W;
-                } else if (dest/SCREEN_W-start/SCREEN_W< 0) {
-                    *p++ = 'N';
-                    start -= SCREEN_W;
-                } else if (dest-start < 0) {
-                    *p++ = 'W';
-                    start -= 1;
-                } else if (dest-start > 0) {
-                    *p++ = 'E';
-                    start += 1;
-                }
-            }
-            *p='\0';
-            return path;
-
+            return dest;
         } else {
+            message("Error, not empty\n");
             // error sound
             continue;
         }
     }
 }
 
+
+
 // unit selected, already positioned to attack position
 int select_attack_target(int attack_unit)
 {
-    message("selecting attack target\n");
-    // get targets
-    uint8_t targets[8];
-    int nbtargets=0;
-    for (int i=0; i<MAX_UNITS && nbtargets<8; i++) {
-        if (!game_info.units[i]) continue; // unused unit, skip
-        if (unit_get_player(i) == game_info.current_player) continue; // same player
-        // unit within reach 
-        const int dist = unit_get_mdistance(attack_unit,i);
-        const int attack_type = unit_get_type(attack_unit);
 
-        if (dist >= unit_attack_range_table[attack_type][0] && \
-            dist <= unit_attack_range_table[attack_type][1]) {
-            targets[nbtargets++]=i; 
-            message("possible target : %d\n",i);
-        } 
-    }
     // check any ?
-    if (nbtargets==0) return -1;
+    if (game_info.nbtargets==0) return -1;
 
     // select targets and display them.
     int choice=0; 
@@ -260,140 +228,120 @@ int select_attack_target(int attack_unit)
         uint16_t pressed = gamepad_pressed();
         if (pressed & (gamepad_up | gamepad_right)) {
             choice++;
-            if (choice>=nbtargets) choice -= nbtargets;
+            if (choice>=game_info.nbtargets) choice -= game_info.nbtargets;
         } else if (pressed & (gamepad_down | gamepad_left)) {
             choice--;
-            if (choice<0) choice += nbtargets;
+            if (choice<0) choice += game_info.nbtargets;
         }
 
-        object *o = game_info.units[targets[choice]];
+        object *o = game_info.units[game_info.targets[choice]];
         game_info.cursor->x = o->x;
         game_info.cursor->y = o->y;
         game_info.cursor->fr = fr_unit_cursor + ((vga_frame/16)%2 ? 1 : 0);
         // update hud for targets
 
         wait_vsync(1);
-        if (pressed & gamepad_A) return targets[choice];
+        if (pressed & gamepad_A) return game_info.targets[choice];
         if (pressed & gamepad_B) return -1;
     }
     // update selected ? 
 
 }
 
+void harvest()
+{
+    for (int i=0;i<MAX_UNITS;i++) {
+        // for all my units
+        if (!game_info.units[i] || unit_get_player(i)!=game_info.current_player) 
+            continue;
+
+        const int utype = unit_get_type(i);
+        const int uterrain = unit_get_terrain(i);
+        if ( utype == unit_farmer || utype == unit_farmer_f ) {
+            // fixme little animation : move little resource sprite to upper bar 
+            switch (uterrain) {
+                case terrain_fields    : game_info.food [game_info.current_player]++; break;
+                case terrain_town      : game_info.gold [game_info.current_player]++; break;
+                case terrain_forest    : game_info.wood [game_info.current_player]++; break;
+                case terrain_mountains : game_info.stone[game_info.current_player]++; break;
+            }
+        }
+    }
+}
+
 
 void human_game_turn()
 {
+    static char path[MAX_PATH];
+
     message ("starting player %d turn\n", game_info.current_player);
     game_info.finished_turn = 0;
 
     game_info.cursor->y=16;
     game_info.cursor->x=0;
 
-    // cycle through players, turn by turn, start play, ...
-    // reset game data
     for (int i=0;i<MAX_UNITS;i++) {
         if (game_info.units[i])
             unit_reset_moved(i);
     }
 
+    harvest();
+
     while (1) {
         int select_id = select_unit();
         message("selected unit %d\n",select_id);
 
-        if (game_info.finished_turn) break; // end of turn : exit loop
+        if (game_info.finished_turn) 
+            break; // end of turn : exit loop
 
         update_pathfinding(select_id);
 
-        /* FIXME : paint all vram wiith attainable tiles. */
-        // Do it when B button pressed on unit 
-        color_map_movement_range(select_id);
-        // reload map
+        int dest = select_destination(select_id);
+        message("selected dest : %d\n",dest);
+        if (!dest) continue;
 
-        // show it
-        char *path = select_destination(select_id);
-        if (!path) continue; // if cannot reach select destination, reselect unit
-        message("selected dest : %s\n",path);
+        reconstruct_path(dest, path);
+        if (*path=='!') continue; // error, cannot move there
 
-        // animate move to dest
-        object *o  = game_info.units[select_id];
-        object *oh = game_info.units_health[select_id];
+        // save old position        
+        uint16_t old_pos = unit_get_pos(select_id);
 
-        uint16_t old_x = o->x, old_y = o->y;
-        for (;*path;path++) {
-            for (int i=0;i<16;i++){ 
-                o->fr &= ~7;
-                switch(*path) {
-                    case 'N' : o->y-=1; o->fr+=6; break;
-                    case 'S' : o->y+=1; o->fr+=4; break;
-                    case 'E' : o->x+=1; o->fr+=0; break;
-                    case 'W' : o->x-=1; o->fr+=2; break;
-                    default : message ("unknown character : %c\n",*path); break;
-                }
-                o->fr += (vga_frame/16)%2;
-                oh->x = o->x;
-                oh->y = o->y;
-                wait_vsync(1);
-            }
-        }
-        // reset to rest frame
-        o->fr &= ~7;
+        unit_moveto(select_id, path);
 
-        // mini menu action : attack / harvest / nothing if not available
-        const int selected_type = unit_get_type(select_id);
-        const int selected_terrain = unit_get_terrain(select_id);
+        // Action menu for post-move actions (Attack)
+
+        get_possible_targets(select_id);
 
         int action;
-        if ( selected_type == unit_farmer || selected_type == unit_farmer_f ) {
-            if (
-                selected_terrain == terrain_fields || 
-                selected_terrain == terrain_forest || 
-                selected_terrain == terrain_mountains || 
-                selected_terrain == terrain_town 
-            ) {
-                action = menu(MENU_HARVEST,3);
-                if (action==1) action = 4;
-               } else {
-                action = menu(MENU_EMPTY,2);
-                if (action==1) action = 2;
-               }
-        } else {
-            action = menu(MENU_ATTACK,3); // only if there is anything to attack !
-        }
+        if (game_info.nbtargets>0) // if there is anything to attack 
+            action = menu(MENU_ATTACK,3); 
+        else 
+            action = menu(MENU_EMPTY,2)+1;
 
 
+        message("action %d\n",action);
         switch(action)
         {
-            case 0: // cancel : rewind position
-                o->x = old_x;
-                o->y = old_y;
-                oh->x = o->x;
-                oh->y = o->y;
-                continue;
+            case 0: // cancel 
+            case 3:
+                // restore position
+                unit_set_pos(select_id, old_pos);
                 break;
+
             case 1 : // attack
                 {
                     int tgt = select_attack_target(select_id);
                     if (tgt>=0) 
                         combat(select_id,tgt); 
                 }
+                unit_set_moved (select_id);
                 break;
-            case 2 : // wait
-                break;
-            case 4 : // harvest 
-                // fixme little animation : move resource sprite to upper bar 
-                switch (selected_terrain) {
-                    case terrain_fields    : game_info.food [game_info.current_player]++; break;
-                    case terrain_town      : game_info.gold [game_info.current_player]++; break;
-                    case terrain_forest    : game_info.wood [game_info.current_player]++; break;
-                    case terrain_mountains : game_info.stone[game_info.current_player]++; break;
-                }
-
+                
+            case 2 : // wait : do nothing, set player moved.
+                unit_set_moved (select_id);
                 break;
         }
-        if (!action) {
-        }
-        
-        unit_set_moved (select_id);
+    
     }
     message("- End of turn\n");
 }

@@ -125,25 +125,50 @@ void intro()
 }
 
 #define MAP_HEADER_SZ 8
-void load_level(int map)
+
+void load_map(int map) {
+    memcpy(
+        game_info.vram, 
+        &data_map_map[MAP_HEADER_SZ+sizeof(game_info.vram)*map],
+        sizeof(game_info.vram)
+    );
+}
+
+void load_units(int map)
 {
-    // copy level from flash to vram (direct copy) 
-    memcpy(game_info.vram, &data_map_map[MAP_HEADER_SZ+sizeof(game_info.vram)*map],sizeof(game_info.vram));
-    
+    // load / free unused units
     for (int i=0;i<MAX_UNITS;i++) { // unit
         const uint8_t *unit = &level_units[map][i][0];
 
-        if (!unit[2]) break; // no type defined : stop here
-
-        if (unit[2]==16) { 
-            // special : flag , or not 
+        if (!unit[2]) {// no type defined : set as not used
+            unit_remove(i);
+        } else if (unit[2]==16) { 
+            // special : flag
         } else {
             unit_new(unit[0],unit[1],unit[2]-1,unit[3]);
             game_info.player_type[unit[3]] = player_human; // by default..
         }
     }
+}
 
-    face_init();
+void get_possible_targets(int attack_unit)
+{
+    message("selecting attack target\n");
+    // get targets
+    game_info.nbtargets=0;
+    for (int i=0; i<MAX_UNITS && game_info.nbtargets<8; i++) {
+        if (!game_info.units[i]) continue; // unused unit, skip
+        if (unit_get_player(i) == game_info.current_player) continue; // same player
+        // unit within reach 
+        const int dist = unit_get_mdistance(attack_unit,i);
+        const int attack_type = unit_get_type(attack_unit);
+
+        if (dist >= unit_attack_range_table[attack_type][0] && \
+            dist <= unit_attack_range_table[attack_type][1]) {
+            game_info.targets[game_info.nbtargets++]=i; 
+            message("possible target : %d\n",i);
+        } 
+    }
 }
 
 // global game element init
@@ -157,6 +182,9 @@ void game_init(void)
         TMAP_HEADER(SCREEN_W,SCREEN_H,TSET_16,TMAP_U16), 
         game_info.vram
         );
+
+    game_info.grid = grid_new();
+
     // for game only, not intro 
 
     // init play ? level ?
@@ -168,8 +196,10 @@ void game_init(void)
         game_info.player_avatar[i]=i;
 
     }
+    face_init();
 
-    load_level(0);
+    load_map(0);
+    load_units(0);
 
     game_info.finished_game=0;
 }
@@ -200,8 +230,6 @@ static int do_attack(int attacking_unit, int attacked_unit, bool right_to_left)
     unit_info(attacked_unit);
 
     uint8_t damage = unit_attack_damage(attacking_unit, attacked_unit) * unit_get_health(attacking_unit) / 256;
-    // fixme show animations !
-    // fixme show happy / sad faces / very happy /sad & shake
 
     // inflict damage
     message("inflicting %d damage\n",damage);
@@ -230,8 +258,8 @@ void combat (int attacking_unit, int attacked_unit)
 
     game_info.cursor->y += 1024; // hide cursor
     
-    uint8_t attacking_terrain = unit_get_terrain(attacking_unit);
-    message("attacking terrain %d\n",attacking_terrain);
+    uint8_t attacking_terrain = unit_get_terrain(attacking_unit);    
+    message("attacking terrain of unit %d : %d\n",attacking_unit, attacking_terrain);
     object *bg_left  = sprite3_new(terrain_bg_table[attacking_terrain],  0,-200,35); 
     object *attacking_sprite = sprite3_new( data_units_16x16_spr, -30, 150, 5 );
     attacking_sprite->d |= 1; // set render 2X 
@@ -243,12 +271,12 @@ void combat (int attacking_unit, int attacked_unit)
     sprite_set_palette(attacking_sprite, unit_get_player(attacking_unit));
 
     uint8_t attacked_terrain = unit_get_terrain(attacked_unit);
-    message("attacked terrain %d\n",attacked_terrain);
+    message("attacked terrain of unit %d : %d\n",attacked_unit, attacked_terrain);
     object *bg_right = sprite3_new(terrain_bg_table[attacked_terrain ],200, 300,35); 
     object *attacked_sprite = sprite3_new( data_units_16x16_spr, 410, 150, 5 );
     attacked_sprite->d |= 1; // set render 2X 
     attacked_sprite->h *= 2;
-    attacked_sprite->fr = unit_get_type(attacked_unit)*8 + 3; // facing left
+    attacked_sprite->fr = unit_get_type(attacked_unit)*8 + 2; // facing left
     object *attacked_life = sprite3_new(data_bignum_16x24_spr, 340,52,5);
     attacked_life->fr = unit_get_health(attacking_unit);
     sprite_set_palette(attacked_sprite, unit_get_player(attacked_unit));
@@ -266,13 +294,15 @@ void combat (int attacking_unit, int attacked_unit)
     }
     for (int i=0;i<80;i++) {
         attacking_sprite->x+=2;
+        attacking_sprite->fr = (attacking_sprite->fr&~7)   + (vga_frame/8)%2;
         face_frame();
-        wait_vsync(1);        
+        wait_vsync(1);
     }
     for (int i=0;i<80;i++) {
+        attacked_sprite->fr  = (attacked_sprite->fr&~7) + 2 + (vga_frame/8)%2;
         attacked_sprite->x-=2;
         face_frame();
-        wait_vsync(1);        
+        wait_vsync(1);
     }
 
 
@@ -288,6 +318,7 @@ void combat (int attacking_unit, int attacked_unit)
     int dmg_given = do_attack(attacking_unit, attacked_unit, true);
 
     if (unit_get_health(attacked_unit)>0) {
+        // fixme check range of defending 
         int dmg_received = do_attack(attacked_unit, attacking_unit, false);
         game_info.avatar_state = dmg_given>dmg_received ? face_laugh : face_cry;
     } else {

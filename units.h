@@ -7,6 +7,7 @@
 
 static inline void unit_remove(uint8_t uid) 
 {
+    if (!game_info.units[uid]) return;
     blitter_remove(game_info.units[uid]);
     game_info.units[uid] = 0;
     blitter_remove(game_info.units_health[uid]);
@@ -94,12 +95,23 @@ static inline uint8_t unit_get_mdistance(int a,int b)
     return abs(ax-bx)+abs(ay-by);
 }
 
-// gets position of a unit by ID
+// gets position of a unit by ID - hidden or not
 static inline uint16_t unit_get_pos(int id)
 {
     const object *u = game_info.units[id];
-    return u->y/16 * SCREEN_W + u->x/16;
+    return (u->y%1024)/16 * SCREEN_W + u->x/16;
 }
+
+static inline void unit_set_pos(int id, int pos)
+{
+    object *u  = game_info.units[id];
+    object *uh = game_info.units_health[id];
+    u->x = (pos%SCREEN_W)*16;
+    u->y = (pos/SCREEN_W)*16;
+    uh->x = u->x;
+    uh->y = u->y;
+}
+
 
 // get the terrain type the unit is on
 static inline uint8_t unit_get_terrain (int unit)
@@ -127,6 +139,7 @@ static inline void unit_show(uint8_t uid)
 void unit_info(uint8_t uid);
 int unit_attack_damage(uint8_t from, uint8_t to);
 uint8_t unit_new (uint8_t x, uint8_t y, uint8_t type, uint8_t player_id );
+void unit_moveto(int unit_id, char *path);
 
 #ifdef UNITS_IMPLEMENTATION
 
@@ -146,13 +159,14 @@ given attack types and attacked unit terrain defense
 */
 int unit_attack_damage(uint8_t from, uint8_t to)
 {
-    // base percentage attacking -> attacked types : 0-5
+    // base percentage attacking -> attacked types : 0-10
     int attack = unit_damage_table [unit_get_type(from)][unit_get_type(to)] ; 
 
-    // defense of the terrain the attacked unit is on 1-5
+    // defense of the terrain the attacked unit is 0-5
     int defense = terrain_defense[unit_get_terrain(to)]; 
-    message("attack %d def %d res: %d\n",attack,defense,attack*51 * (6-defense)/6);
-    return attack*51 * (6-defense)/6;
+    int damage = attack*256 / (defense+5);
+    message("attack %d def %d res: %d\n",attack,defense,damage);
+    return damage;
 }
 
 // returns uid
@@ -186,6 +200,32 @@ uint8_t unit_new (uint8_t x, uint8_t y, uint8_t type, uint8_t player_id )
 
     message("init unit %d at %d,%d : typ %d color %d\n",uid, o->x, o->y, type, player_id);
     return uid;
+}
+
+void unit_moveto(int unit_id, char *path)
+{
+    // animate move to dest
+    object *o  = game_info.units[unit_id];
+    object *oh = game_info.units_health[unit_id];
+
+    for (;*path;path++) {
+        for (int i=0;i<16;i++){ 
+            o->fr &= ~7;
+            switch(*path) {
+                case 'N' : o->y-=1; o->fr+=6; break;
+                case 'S' : o->y+=1; o->fr+=4; break;
+                case 'E' : o->x+=1; o->fr+=0; break;
+                case 'W' : o->x-=1; o->fr+=2; break;
+                default : message ("unknown character : %c\n",*path); break;
+            }
+            o->fr += (vga_frame/16)%2;
+            oh->x = o->x;
+            oh->y = o->y;
+            wait_vsync(1);
+        }
+    }
+    // reset to rest frame
+    o->fr &= ~7;
 }
 
 #endif 

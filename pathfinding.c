@@ -120,24 +120,46 @@ void update_pathfinding ( int source_unit )
 	}
 }
 
-// once cost_array has been created, find the path from an array
-void reconstruct_path(int src, int dst)
+// once cost_array has been created, find the path to a given point.
+// source has already been given by building the cost array
+void reconstruct_path(int dst, char *path)
 {
+	int len=0;
+	char *p=&path[MAX_PATH-1]; // start at the end
 	do {
-		// message("%d,%d\n", dst%SCREEN_W, dst/SCREEN_W);
-		dst = cost_array[dst].pos;
-		if (cell_isempty(cost_array[dst])) { 
-			// fixme handle errors better ...
-			message("Error : cannot recontruct path !\n");
-			die(3,2);
+		// error ?
+		if (cell_isempty(cost_array[dst]) || len==MAX_PATH) { 
+			*path='!'; 
+			return;
 		}
-	} while(dst != src);
+
+		// message("%d,%d\n", dst%SCREEN_W, dst/SCREEN_W);
+		int new_dst = cost_array[dst].pos;
+		switch(new_dst-dst) {
+			case  1 : *p-- = 'W'; break;
+			case -1 : *p-- = 'E'; break;
+			case  SCREEN_W : *p-- = 'N'; break;
+			case -SCREEN_W : *p-- = 'S'; break;
+		}
+		dst=new_dst;
+		len++;
+	} while(cost_array[dst].cost); // stop when cost is zero 
+
+	// now pad string left
+	for (int i=0;i<=len;i++) 
+		path[i] = path[MAX_PATH-len+i];
+    path[len]='\0';
+    message("resulting path : %s\n",path);
 }
 
 
-void color_map_movement_range(void)
+void color_grid_movement_range(void)
 {
-	for (int pos=SCREEN_W;pos<SCREEN_H*SCREEN_W;pos++) // start line 1 
-		if (!cell_isempty(cost_array[pos]))
-			game_info.vram[pos] = tile_mark;
+	uint32_t *grid = (uint32_t*) game_info.grid->data;
+	for (int y=0;y<SCREEN_H;y++) {
+		grid[y]=0;
+		for (int x=0;x<SCREEN_W;x++) // start line 1 
+			if (!cell_isempty(cost_array[(y+1)*SCREEN_W+x]))
+				grid[y] |= 1<<x;
+	}
 }

@@ -11,6 +11,7 @@
 #define MENU_Y 5
 
 #define MAX_UNITS 32 // total max number of units on screen
+#define MAX_PATH 16
 
 enum Player_type_enum {
     player_notused,
@@ -42,6 +43,7 @@ struct GameInfo {
     // per player info
     uint8_t player_type[4]; 
     uint8_t player_avatar[4];
+
     // resources
     uint8_t food[4]; // per color / resource id
     uint8_t gold[4]; // per color / resource id
@@ -58,9 +60,12 @@ struct GameInfo {
     object *cursor;
 
     object *face[2];       // for avatars : player / adversary
+
+    object *grid;   
     enum Face_State avatar_state; // current player 
 
-
+    uint8_t targets[8];
+    int nbtargets;
 } game_info;
 
 
@@ -82,6 +87,8 @@ TODO : map 0..N (id):
     map_get
 */
 
+void load_map (int map_id); // (re) load map background
+
 // Faces
 void face_init(void);
 void face_frame(void);
@@ -94,12 +101,13 @@ void draw_hud( void );
 // human
 void human_game_turn(void);
 
+void get_possible_targets(int attacking_unit); // main
 
 // -- path finding structures and functions
 
 struct Cell {
     unsigned cost:6;
-    unsigned pos:10;
+    unsigned pos:10; // comes from (absolute)
 };
 #define MAX_COST 63 // 6 bits
 #define FRONTIER_SIZE 32 // max elements in frontier
@@ -114,8 +122,13 @@ extern struct Cell frontier  [FRONTIER_SIZE];      // cost, position
 void update_pathfinding ( int source );
 
 // once cost_array has been created, find the path from an array
-void reconstruct_path(int src, int dst);
+void reconstruct_path(int dst, char *path);
 
 // color whole map with attainable spots.
 // must call update pathfinding before
 void color_map_movement_range();
+void color_grid_movement_range();
+
+// grid display (grid.c)
+object *grid_new(void);
+void grid_empty();
