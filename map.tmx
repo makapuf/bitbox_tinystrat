@@ -1,31 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" tiledversion="2017.07.26" orientation="orthogonal" renderorder="right-down" width="25" height="19" tilewidth="16" tileheight="16" nextobjectid="57">
+<map version="1.0" tiledversion="2017.07.26" orientation="orthogonal" renderorder="right-down" width="25" height="19" tilewidth="16" tileheight="16" nextobjectid="59">
  <tileset firstgid="1" source="tiles_bg.tsx"/>
  <tileset firstgid="218" name="units" tilewidth="16" tileheight="16" tilecount="64" columns="16">
   <image source="map_units.png" trans="ff00da" width="256" height="64"/>
  </tileset>
- <tileset firstgid="282" name="faces" tilewidth="26" tileheight="26" tilecount="25" columns="5">
-  <image source="sprites/faces_26x26.png" trans="ff00da" width="130" height="130"/>
+ <tileset firstgid="282" name="faces" tilewidth="26" tileheight="26" tilecount="30" columns="6">
+  <image source="sprites/faces_26x26.png" trans="ff00da" width="156" height="130"/>
   <tile id="0">
    <animation>
     <frame tileid="0" duration="500"/>
     <frame tileid="1" duration="500"/>
    </animation>
   </tile>
-  <tile id="5">
+  <tile id="2">
    <animation>
-    <frame tileid="5" duration="500"/>
-    <frame tileid="5" duration="500"/>
+    <frame tileid="2" duration="500"/>
+    <frame tileid="3" duration="500"/>
    </animation>
   </tile>
-  <tile id="8">
+  <tile id="4">
    <animation>
-    <frame tileid="8" duration="500"/>
+    <frame tileid="4" duration="300"/>
+    <frame tileid="5" duration="300"/>
+   </animation>
+  </tile>
+  <tile id="6">
+   <animation>
+    <frame tileid="6" duration="500"/>
+    <frame tileid="6" duration="500"/>
+   </animation>
+  </tile>
+  <tile id="9">
+   <animation>
     <frame tileid="9" duration="500"/>
+    <frame tileid="10" duration="500"/>
+   </animation>
+  </tile>
+  <tile id="14">
+   <animation>
+    <frame tileid="14" duration="400"/>
+    <frame tileid="15" duration="400"/>
    </animation>
   </tile>
  </tileset>
- <tileset firstgid="307" name="units_16x16" tilewidth="16" tileheight="16" tilecount="128" columns="8">
+ <tileset firstgid="312" name="units_16x16" tilewidth="16" tileheight="16" tilecount="128" columns="8">
   <image source="sprites/units_16x16.png" trans="ff00da" width="128" height="256"/>
   <tile id="0">
    <animation>
@@ -43,9 +61,9 @@
    </animation>
   </tile>
  </tileset>
- <layer name="level0" width="25" height="19" visible="0">
+ <layer name="level0" width="25" height="19">
   <data encoding="csv">
-162,162,199,11,168,211,176,163,162,165,167,168,209,179,162,165,204,182,205,176,206,177,207,182,216,
+162,162,199,11,168,211,176,163,162,165,167,168,209,179,162,165,207,182,204,176,206,177,205,182,216,
 1,1,1,1,91,1,1,1,1,1,127,113,129,1,1,1,1,1,1,1,1,1,1,1,1,
 13,13,1,1,1,1,1,1,13,1,134,126,136,11,1,1,1,1,1,11,13,1,1,11,13,
 11,1,1,1,2,2,2,1,1,1,1,99,1,1,11,1,1,1,1,1,11,1,1,1,11,
@@ -69,8 +87,8 @@
  <layer name="_level0_units" width="25" height="19">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,218,234,0,266,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,234,0,266,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,218,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,220,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,268,0,0,0,0,0,0,0,0,
 281,0,0,0,0,218,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -136,8 +154,8 @@
 </data>
  </layer>
  <objectgroup name="_objects" visible="0">
-  <object id="47" gid="302" x="0" y="20" width="26" height="26"/>
-  <object id="52" gid="419" x="368" y="208" width="16" height="16"/>
-  <object id="55" gid="287" x="263" y="21" width="26" height="26"/>
+  <object id="47" gid="306" x="0" y="20" width="26" height="26"/>
+  <object id="52" gid="424" x="368" y="208" width="16" height="16"/>
+  <object id="55" gid="288" x="263" y="21" width="26" height="26"/>
  </objectgroup>
 </map>

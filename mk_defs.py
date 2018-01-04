@@ -15,7 +15,7 @@ units    = 'farmer farmer_f soldier soldier_f archer guard guard2 catapult belie
 cursors  = 'cursor cursor2 left right down up'.split()
 flags    = 'flag1 flag2 flag3 flag4 flag5 bullet1 bullet2 bullet3'.split()
 
-resources = 'gold iron coal wood food'.split()
+resources = 'food gold wood stone'.split()
 tags      = 'hurt surrender medal1 medal2 medal3'.split()
 misc      = 'skull magic1 magic2 swirl1 swirl2 explo1 explo2 explo3 mouse bzz'.split()
 menus 	  = 'bg harvest attack empty'.split()
@@ -71,6 +71,7 @@ def unit_distance_range(u) :
 # ---------------------------------
 print '#ifndef DEFS_DEFINITION'
 print '#define DEFS_DEFINITION'
+
 # -- terrains
 print "enum {"
 for t in terrains : 
@@ -78,8 +79,13 @@ for t in terrains :
 print '};'
 print '#define NB_TERRAINS %d'%len(terrains)
 
-# -- units 
+# -- resources
+print "enum {"
+for res in resources : 
+	print "    resource_%s,"%res
+print '};'
 
+# -- units 
 print "enum {"
 for c in colors : 
 	print "    color_%s,"%c

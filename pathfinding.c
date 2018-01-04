@@ -19,7 +19,7 @@ struct Cell frontier  [FRONTIER_SIZE];      // cost, position
 void cost_init(int source)
 {
 	for (int i=0;i<SCREEN_W*SCREEN_H;i++)
-		cost_array[i] = empty_cell; // max_cost+1 !
+		cost_array[i] = empty_cell; 
 	cost_array[source] = (struct Cell) {.cost=0,.pos=source};
 }
 
@@ -152,14 +152,3 @@ void reconstruct_path(int dst, char *path)
     message("resulting path : %s\n",path);
 }
 
-
-void color_grid_movement_range(void)
-{
-	uint32_t *grid = (uint32_t*) game_info.grid->data;
-	for (int y=0;y<SCREEN_H;y++) {
-		grid[y]=0;
-		for (int x=0;x<SCREEN_W;x++) // start line 1 
-			if (!cell_isempty(cost_array[(y+1)*SCREEN_W+x]))
-				grid[y] |= 1<<x;
-	}
-}

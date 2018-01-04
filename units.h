@@ -2,6 +2,7 @@
 #include "data.h"
 #include "tinystrat.h"
 #include "defs.h"
+#include "stdbool.h"
 
 #include <stdlib.h> // abs
 
@@ -10,10 +11,12 @@ static inline void unit_remove(uint8_t uid)
     if (!game_info.units[uid]) return;
     blitter_remove(game_info.units[uid]);
     game_info.units[uid] = 0;
-    blitter_remove(game_info.units_health[uid]);
-    game_info.units_health[uid] = 0;
 }
 
+static inline bool unit_empty(int unit)
+{
+    return !game_info.units[unit];
+}
 
 static inline int unit_get_type  (int unit) // return unit_id
 { 
@@ -47,12 +50,12 @@ static inline void unit_set_palette(int unit, int palette)
 
 static inline void unit_set_health(uint8_t unit_id, uint8_t health)
 {
-    game_info.units_health[unit_id]->fr = fr_misc_0 + health;
+    game_info.units[unit_id]->c = health;
 }
 
 static inline uint8_t unit_get_health(uint8_t unit_id)
 {
-    return game_info.units_health[unit_id]->fr - fr_misc_0;
+    return game_info.units[unit_id]->c;
 }
 
 static inline int  unit_get_player(int unit) { 
@@ -105,11 +108,17 @@ static inline uint16_t unit_get_pos(int id)
 static inline void unit_set_pos(int id, int pos)
 {
     object *u  = game_info.units[id];
-    object *uh = game_info.units_health[id];
     u->x = (pos%SCREEN_W)*16;
     u->y = (pos/SCREEN_W)*16;
-    uh->x = u->x;
-    uh->y = u->y;
+}
+
+static inline bool unit_can_attack(int attacking, int attacked)
+{
+    const int dist = unit_get_mdistance(attacking,attacked);
+    const int attack_type = unit_get_type(attacking);
+
+    return (dist >= unit_attack_range_table[attack_type][0] && \
+        dist <= unit_attack_range_table[attack_type][1]);
 }
 
 
@@ -124,7 +133,6 @@ static inline void unit_hide(uint8_t uid)
 {
     if (game_info.units[uid]) {            
         game_info.units[uid]->y|=1024;
-        game_info.units_health[uid]->y|=1024;
     }
 }
 
@@ -132,8 +140,19 @@ static inline void unit_show(uint8_t uid)
 {
     if (game_info.units[uid]) {
         game_info.units[uid]->y&= ~1024;
-        game_info.units_health[uid]->y &= ~1024;
     }
+}
+
+// find ID of unit at this screen position, or -1 if not found
+static inline int unit_at(int pos)
+{
+    for (int uid=0;uid<MAX_UNITS;uid++) {
+        object *obj = game_info.units[uid];
+        if (obj && obj->x/16 == pos%SCREEN_W && obj->y/16 == pos/SCREEN_W ) {            
+            return uid;
+        }
+    }
+    return -1; 
 }
 
 void unit_info(uint8_t uid);
@@ -169,6 +188,23 @@ int unit_attack_damage(uint8_t from, uint8_t to)
     return damage;
 }
 
+void sprite3_cpl_line_noclip (struct object *o);
+
+#define YLIFE 15
+static void unit_graph_line(struct object *o) {
+    // draw sprite 3
+    sprite3_cpl_line_noclip(o);
+
+    // overdraw life as object->c
+    const int y=vga_line-o->ry;
+    if (y >= 16-o->c ) {
+        draw_buffer[o->x+1]=RGB(y*20-100,305-y*20,0);
+    }
+    // fixme color green -> yellow -> red pixel colors gradient , not same
+            
+}
+
+
 // returns uid
 uint8_t unit_new (uint8_t x, uint8_t y, uint8_t type, uint8_t player_id )
 {
@@ -187,18 +223,16 @@ uint8_t unit_new (uint8_t x, uint8_t y, uint8_t type, uint8_t player_id )
     // allocate sprite
     // put below cursors
     object *o =sprite3_new( data_units_16x16_spr, x*16, y*16, 5 ); 
+    o->line = unit_graph_line; // replace with unit drawing 
+    o->frame = 0; // do not change line draw - no clip
+
     game_info.units[uid] = o;
 
     unit_set_type(uid,type);
     unit_set_player(uid,player_id);
-
-    // top of prec, below mouse_cursor
-    object *oh=sprite3_new(data_misc_16x16_spr, x*16, y*16, 4); 
-    game_info.units_health[uid] = oh;
-
     unit_set_health(uid, 10); 
 
-    message("init unit %d at %d,%d : typ %d color %d\n",uid, o->x, o->y, type, player_id);
+    // message("init unit %d at %d,%d : typ %d color %d\n",uid, o->x, o->y, type, player_id);
     return uid;
 }
 
@@ -206,7 +240,6 @@ void unit_moveto(int unit_id, char *path)
 {
     // animate move to dest
     object *o  = game_info.units[unit_id];
-    object *oh = game_info.units_health[unit_id];
 
     for (;*path;path++) {
         for (int i=0;i<16;i++){ 
@@ -219,8 +252,6 @@ void unit_moveto(int unit_id, char *path)
                 default : message ("unknown character : %c\n",*path); break;
             }
             o->fr += (vga_frame/16)%2;
-            oh->x = o->x;
-            oh->y = o->y;
             wait_vsync(1);
         }
     }

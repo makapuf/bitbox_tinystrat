@@ -16,17 +16,18 @@
 enum Player_type_enum {
     player_notused,
     player_human,
-    player_cpu1,
-    player_off, // abandoned game but still present
+    player_cpu0,
+    player_off, // abandoned game but still present (no units)
 };
 
 enum Face_State {
     face_idle, 
-    face_laugh,
     face_talk,
-    face_cry,
-    face_hud,
-    face_off,
+    face_happy1,
+    face_happy2,
+    face_sad1,
+    face_sad2,
+    face_NB
 };
 
 struct GameInfo {
@@ -41,28 +42,23 @@ struct GameInfo {
     int8_t cursor_unit;  // id of object under cursor, <0 : None 
 
     // per player info
-    uint8_t player_type[4]; 
+    uint8_t player_type[4]; // replace with fnpointer ?
     uint8_t player_avatar[4];
 
-    // resources
-    uint8_t food[4]; // per color / resource id
-    uint8_t gold[4]; // per color / resource id
-    uint8_t wood[4]; // per color / resource id
-    uint8_t stone[4]; // per color / resource id
+    uint8_t resources[4][4]; // per color / resource id
 
     // global info
     object *units [MAX_UNITS];      // frame as unit type, ptr=0 if not allocated. palette as player+aleady moved (faded)
-    object *units_health[MAX_UNITS];  // same position as unit but frame=health
+    //object *units_health[MAX_UNITS];  // same position as unit but frame=health
     
     uint16_t vram[SCREEN_W*SCREEN_H]; // map
 
     object *map;		// BG
     object *cursor;
 
-    object *face[2];       // for avatars : player / adversary
+    object *face;       // for avatar : player 
 
     object *grid;   
-    enum Face_State avatar_state; // current player 
 
     uint8_t targets[8];
     int nbtargets;
@@ -90,16 +86,18 @@ TODO : map 0..N (id):
 void load_map (int map_id); // (re) load map background
 
 // Faces
-void face_init(void);
-void face_frame(void);
-void set_adversary_face(int); // set with player id
+static inline int face_frame(int player, enum Face_State st)
+{
+    return game_info.player_avatar[player]*face_NB+st;
+}
 
 uint16_t gamepad_pressed(void);
 void combat (int attacking_unit, int attacked_unit);
 void draw_hud( void );
+void harvest(void); // harvest for current player
 
-// human
 void human_game_turn(void);
+void play_CPU0 (void);
 
 void get_possible_targets(int attacking_unit); // main
 
@@ -126,8 +124,9 @@ void reconstruct_path(int dst, char *path);
 
 // color whole map with attainable spots.
 // must call update pathfinding before
-void color_map_movement_range();
 void color_grid_movement_range();
+void color_grid_units(void);
+void color_grid_targets(void);
 
 // grid display (grid.c)
 object *grid_new(void);

@@ -2,10 +2,6 @@
 #include "defs.h"
 #include "units.h"
 
-
-char path[MAX_PATH]; // path = string of NSEW or NULL for abort
-// fixme remove 
-
 /* updates info about terrain under mouse_cursor 
    returns the unit under mouse_cursor if any or NULL
    */
@@ -24,19 +20,10 @@ void update_cursor_info(void)
     game_info.vram[6]=tile_zero + terrain_defense[terrain_id];
 
     // find unit under mouse_cursor - if any
-    int8_t *oi = &game_info.cursor_unit;
-    for (*oi=0;*oi<MAX_UNITS;(*oi)++) {
-        object *obj = game_info.units[*oi];
-        if (obj && obj->x/16 == cursor->x/16 && obj->y/16 == cursor->y/16 ) {            
-            break;
-        }
-    }
-    if (*oi==MAX_UNITS) *oi=-1; // not found
-
+    game_info.cursor_unit = unit_at(cursor->x/16 + (cursor->y/16)*SCREEN_W);
+    
     draw_hud();
 }
-
-
 
 void move_cursor(uint16_t gamepad_pressed)
 {
@@ -126,19 +113,16 @@ unsigned int menu(int menu_id, int nb_choices)
 int select_unit( void )
 {
     uint16_t pressed;
-    game_info.avatar_state = face_hud;
 
     // wait till button A pressed on one of my units.
     while(1) {
+        color_grid_units();
         do { 
             pressed  = gamepad_pressed();
             move_cursor(pressed);
             update_cursor_info();
-            face_frame();
-
             wait_vsync(1);
-
-        } while( !(pressed & gamepad_A) );
+        } while( !(pressed & gamepad_A) );        
 
         if (game_info.cursor_unit<0) {
             int choice = menu(MENU_BG,4);
@@ -146,7 +130,6 @@ int select_unit( void )
             {
                 case 4 : 
                     game_info.finished_turn=1; 
-                    message("plop\n");
                     return -1; // 
                 default : // help, options, save ...
                     break;
@@ -174,9 +157,7 @@ int select_destination( int select_id )
             // animate selected unit / health
             
             object *o = game_info.units[select_id];
-            object *oh = game_info.units_health[select_id];            
             o->y = (o->y/16)*16 + ((vga_frame/16)%2 ? 1 : 0);
-            oh->y = (oh->y/16)*16 + ((vga_frame/16)%2 ? 1 : 0);
 
             move_cursor(pressed);
             update_cursor_info();
@@ -218,6 +199,7 @@ int select_destination( int select_id )
 // unit selected, already positioned to attack position
 int select_attack_target(int attack_unit)
 {
+    color_grid_targets();
 
     // check any ?
     if (game_info.nbtargets==0) return -1;
@@ -248,31 +230,11 @@ int select_attack_target(int attack_unit)
 
 }
 
-void harvest()
-{
-    for (int i=0;i<MAX_UNITS;i++) {
-        // for all my units
-        if (!game_info.units[i] || unit_get_player(i)!=game_info.current_player) 
-            continue;
-
-        const int utype = unit_get_type(i);
-        const int uterrain = unit_get_terrain(i);
-        if ( utype == unit_farmer || utype == unit_farmer_f ) {
-            // fixme little animation : move little resource sprite to upper bar 
-            switch (uterrain) {
-                case terrain_fields    : game_info.food [game_info.current_player]++; break;
-                case terrain_town      : game_info.gold [game_info.current_player]++; break;
-                case terrain_forest    : game_info.wood [game_info.current_player]++; break;
-                case terrain_mountains : game_info.stone[game_info.current_player]++; break;
-            }
-        }
-    }
-}
 
 
 void human_game_turn()
 {
-    static char path[MAX_PATH];
+    char path[MAX_PATH]; // merge & remove ?
 
     message ("starting player %d turn\n", game_info.current_player);
     game_info.finished_turn = 0;
@@ -299,13 +261,11 @@ void human_game_turn()
         int dest = select_destination(select_id);
         message("selected dest : %d\n",dest);
         if (!dest) continue;
-
-        reconstruct_path(dest, path);
-        if (*path=='!') continue; // error, cannot move there
-
         // save old position        
         uint16_t old_pos = unit_get_pos(select_id);
 
+        reconstruct_path(dest, path);
+        if (*path=='!') continue; // error, cannot move there
         unit_moveto(select_id, path);
 
         // Action menu for post-move actions (Attack)
@@ -331,6 +291,8 @@ void human_game_turn()
             case 1 : // attack
                 {
                     int tgt = select_attack_target(select_id);
+                    grid_empty();
+
                     if (tgt>=0) 
                         combat(select_id,tgt); 
                 }
