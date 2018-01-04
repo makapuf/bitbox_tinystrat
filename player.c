@@ -27,21 +27,6 @@ void update_cursor_info(void)
 
 void move_cursor(uint16_t gamepad_pressed)
 {
-    // mouse
-    #if 0
-    mouse_cursor->x = mouse_x; 
-    mouse_cursor->y = mouse_y;
-    if (mouse_cursor->x<0) mouse_cursor->x=0;
-    if (mouse_cursor->y<0) mouse_cursor->y=0;
-    if (mouse_cursor->x>VGA_H_PIXELS) mouse_cursor->x = VGA_H_PIXELS;
-    if (mouse_cursor->y>VGA_V_PIXELS) mouse_cursor->y = VGA_V_PIXELS;       
-    
-    // square mouse_cursor, move on click
-    if (mouse_buttons & mousebut_left) {    
-        cursor->x = mouse_cursor->x & ~0xf;
-        cursor->y = mouse_cursor->y & ~0xf;
-    }
-    #endif 
     object * const cursor = game_info.cursor;
     if (gamepad_pressed & gamepad_left && cursor->x > 0) 
         cursor->x -= 16;
@@ -112,11 +97,10 @@ unsigned int menu(int menu_id, int nb_choices)
 
 int select_unit( void )
 {
-    uint16_t pressed;
-
+    color_grid_units();
     // wait till button A pressed on one of my units.
     while(1) {
-        color_grid_units();
+        uint16_t pressed;
         do { 
             pressed  = gamepad_pressed();
             move_cursor(pressed);
@@ -146,37 +130,38 @@ int select_unit( void )
 
 int select_destination( int select_id )
 {
-    // int start = cursor_position();
+    int start = cursor_position();
+    color_grid_movement_range();
 
-    uint16_t pressed;
     // wait till button A pressed and on an empty space
     while(1) {
+        uint16_t pressed;
         while(1) { 
-            pressed = gamepad_pressed();
-
-            // animate selected unit / health
-            
+            // animate selected unit 
             object *o = game_info.units[select_id];
             o->y = (o->y/16)*16 + ((vga_frame/16)%2 ? 1 : 0);
 
+            pressed = gamepad_pressed();
             move_cursor(pressed);
             update_cursor_info();
-            color_grid_movement_range();
-
             wait_vsync(1);
+
             if (pressed & gamepad_A) break;
             if (pressed & gamepad_B) break;
         }
-        grid_empty();
 
         // cancel
         if (pressed & gamepad_B)
             return 0;
 
-        if (game_info.cursor_unit==-1) { // check no unit on dest. tile/ within range
+        // get target destination
+        int dest = cursor_position();
+        if (dest == start) 
+            return dest; // do not move : nothing to check
 
-            // get target destination
-            int dest = cursor_position();
+        if (game_info.cursor_unit==-1) { // check no unit on dest. 
+
+            // check tile within range
             struct Cell dest_cell = cost_array[dest];
             message ("target distance : %d\n",dest_cell.cost);
             if (cell_isempty(dest_cell)) {
@@ -192,6 +177,7 @@ int select_destination( int select_id )
             continue;
         }
     }
+    grid_empty();
 }
 
 
@@ -265,7 +251,6 @@ void human_game_turn()
         uint16_t old_pos = unit_get_pos(select_id);
 
         reconstruct_path(dest, path);
-        if (*path=='!') continue; // error, cannot move there
         unit_moveto(select_id, path);
 
         // Action menu for post-move actions (Attack)

@@ -57,6 +57,32 @@ void palette_fade(int palette_sz, object *ob, uint16_t *src_palette, uint8_t val
     }
 }
 
+// gamepad 0 button pressed this frame ? 
+// Autorepeat UDLR presses
+// call exactly once per frame 
+
+#define AUTOREPEAT_MASK (gamepad_up|gamepad_down|gamepad_left|gamepad_right)
+uint16_t gamepad_pressed(void)
+{
+    static uint16_t gamepad_previous=0; 
+    static uint8_t timer;
+
+    uint16_t pressed = gamepad_buttons[0] & ~gamepad_previous;
+    gamepad_previous = gamepad_buttons[0];
+
+    if ((gamepad_buttons[0] & AUTOREPEAT_MASK)) {
+        if (pressed & AUTOREPEAT_MASK) {
+            timer=20;
+        } else if (--timer==0) {
+            // fire again
+            pressed |= (gamepad_buttons[0] & AUTOREPEAT_MASK);
+            timer=4;
+        }
+    } 
+
+    return pressed; 
+}
+
 void intro()
 {
     object *bg = sprite3_new(data_intro_bg_spr, 0,0,200);
@@ -242,16 +268,6 @@ static int do_attack(int attacking_unit, int attacked_unit, bool right_to_left)
     return damage;
 }
 
-// gamepad 0 button pressed this frame ? 
-// call exactly once per frame 
-uint16_t gamepad_pressed(void)
-{
-    static uint16_t gamepad_previous=0; 
-    uint16_t pressed = gamepad_buttons[0] & ~gamepad_previous;
-    gamepad_previous = gamepad_buttons[0];
-
-    return pressed; 
-}
 
 static const uint8_t resource_terrain[4]={ // per resource
     [resource_food]  = terrain_fields,
@@ -304,7 +320,7 @@ void harvest()
 static void fight_animation( void )
 {
     // wait keypress
-    object *fight_spr = sprite3_new(data_fight_200x200_spr,100,50,3);
+    object *fight_spr = sprite3_new(data_fight_200x200_spr,100,70,3);
     static const uint8_t fight_anim[8] = {0,1,2,1,3,0,2,1};
     for (int i=0;i<60;i++) {
         fight_spr->fr = fight_anim[(vga_frame/16)%8];

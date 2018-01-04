@@ -126,7 +126,8 @@ void reconstruct_path(int dst, char *path)
 {
 	int len=0;
 	char *p=&path[MAX_PATH-1]; // start at the end
-	do {
+
+	while(cost_array[dst].cost) { // stop if/when cost is zero  {
 		// error ?
 		if (cell_isempty(cost_array[dst]) || len==MAX_PATH) { 
 			*path='!'; 
@@ -143,7 +144,7 @@ void reconstruct_path(int dst, char *path)
 		}
 		dst=new_dst;
 		len++;
-	} while(cost_array[dst].cost); // stop when cost is zero 
+	} 
 
 	// now pad string left
 	for (int i=0;i<=len;i++) 
