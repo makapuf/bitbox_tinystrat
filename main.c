@@ -86,6 +86,8 @@ uint16_t gamepad_pressed(void)
 
 void intro()
 {
+    wait_vsync(15); // little pause
+
     object *bg = sprite3_new(data_intro_bg_spr, 0,0,200);
 
     #define BGPAL 64 // couples
@@ -536,6 +538,8 @@ void ready_animation()
 // main_menu : new game, about, ...
 int main_menu()
 {
+    wait_vsync(15); // little pause
+
     object *bg = sprite3_new(data_main_menu_spr, 0,0,200);
 
     // replace with ram palette
