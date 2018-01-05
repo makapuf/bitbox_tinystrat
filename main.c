@@ -40,6 +40,7 @@ int8_t sinus(int x)
         return -sine_table[63-x];
 }
 
+static uint16_t ram_palette[256*2]; 
 
 // fade to black a palette from a reference palette. value =0 means full black
 void palette_fade(int palette_sz, object *ob, uint16_t *src_palette, uint8_t value)
@@ -90,7 +91,6 @@ void intro()
     #define BGPAL 64 // couples
     // replace with ram palette
     uint16_t *src_pal = (uint16_t*) bg->b; // in rom 
-    static uint16_t ram_palette[BGPAL*2]; 
     bg->b = (uintptr_t) ram_palette; 
 
 
@@ -101,16 +101,17 @@ void intro()
     }
 
     wait_vsync(15);
+    
+    // fixme enter left/right ...
     object *horse_l = sprite3_new(data_intro_horse_left_spr, 0,     50,10);
-    // enter left/right
     wait_vsync(15);
     object *horse_r = sprite3_new(data_intro_horse_right_spr, 330,  50,10);
     wait_vsync(15);
+    object *obj_l = sprite3_new(data_intro_objects_left_spr,    0,  30,7);
+    wait_vsync(15);
+    object *obj_r = sprite3_new(data_intro_objects_right_spr, 330,  30,7);
+    wait_vsync(15);
 
-/*
-    data_intro_objects_left_spr
-    data_intro_objects_right_spr
-*/
 
     object *tiny = sprite3_new(data_intro_tiny_spr, -16,140,10);
     wait_vsync(30);
@@ -126,8 +127,6 @@ void intro()
             wars->y+=16;
         else 
             wars->y = 166+sinus(vga_frame)/32;
-        if (GAMEPAD_PRESSED(0,up)) wars->y--;
-        if (GAMEPAD_PRESSED(0,down)) wars->y++;
         wait_vsync(1);
     }
 
@@ -147,6 +146,9 @@ void intro()
     blitter_remove(tiny);
     blitter_remove(horse_l);
     blitter_remove(horse_r);
+    blitter_remove(obj_r);
+    blitter_remove(obj_l);
+
     message("End of intro.\n");
 }
 
@@ -512,29 +514,67 @@ void game_next_player()
         game_info.current_player = next;
 
 
-    // do animation
+}
+
+void ready_animation()
+{
+    // fixme music 
+    // fixme stop at middle or something
+    // fixme get ready + PLAYER 
+
     game_info.face->fr = face_frame(game_info.current_player, face_idle);
     game_info.face->y=134;
     game_info.face->h=26;
-    object *next_spr = sprite3_new(data_next_player_spr,0,130,10);
+    object *next_spr = sprite3_new(data_next_player_spr,0,130,6);
     for (next_spr->x=-30;next_spr->x<400+100;next_spr->x+=4) {
         game_info.face->x=next_spr->x+2;
         wait_vsync(1);
     }
-
     blitter_remove(next_spr);
 }
 
+// main_menu : new game, about, ...
+int main_menu()
+{
+    object *bg = sprite3_new(data_main_menu_spr, 0,0,200);
+
+    // replace with ram palette
+    uint16_t *src_pal = (uint16_t*) bg->b; // in rom 
+    bg->b = (uintptr_t) ram_palette; 
+
+    // fade-in palette 
+    for (int i=0;i<255;i+=3) {
+        palette_fade(255, bg, src_pal, i);
+        wait_vsync(1);
+    }
+
+    // wait keypress
+    while (!GAMEPAD_PRESSED(0,start)); 
+
+
+    // fade-out palette
+    for (int i=0;i<255;i+=4) {
+        palette_fade(255, bg, src_pal, 255-i);
+        wait_vsync(1);
+    }
+
+    blitter_remove(bg);
+    return 0;
+}
+
+
 void bitbox_main()
 {
-    //intro();
 
-    // main_menu : new game, about, ...
-    // select game level, parameters ...
+    intro();
+    main_menu(); 
+
+    // fixme select game level, parameters ...
 
     game_init();
     do {
         draw_hud();        
+        ready_animation();
         switch (game_info.player_type[game_info.current_player]) {
             case player_human : human_game_turn(); break;
             case player_cpu0  : play_CPU0(); break;
