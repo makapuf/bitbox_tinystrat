@@ -91,6 +91,7 @@ static inline int face_frame(int player, enum Face_State st)
     return game_info.player_avatar[player]*face_NB+st;
 }
 
+#define GAMEPAD_DIRECTIONS (gamepad_up|gamepad_down|gamepad_left|gamepad_right)
 uint16_t gamepad_pressed(void);
 void combat (int attacking_unit, int attacked_unit);
 void draw_hud( void );
@@ -131,3 +132,15 @@ void color_grid_targets(void);
 // grid display (grid.c)
 object *grid_new(void);
 void grid_empty();
+
+// SFX
+#define sfx_move 2
+#define sfx_select 3
+#define sfx_explode 4
+
+#define songorder_song 0
+#define songorder_battle 6
+#define songorder_next 7
+
+void play_sfx(int sfx_id);
+void mod_jumpto(int order); 

@@ -28,6 +28,10 @@ void update_cursor_info(void)
 void move_cursor(uint16_t gamepad_pressed)
 {
     object * const cursor = game_info.cursor;
+
+    if (gamepad_pressed && GAMEPAD_DIRECTIONS)
+        play_sfx(sfx_move);
+
     if (gamepad_pressed & gamepad_left && cursor->x > 0) 
         cursor->x -= 16;
     if (gamepad_pressed & gamepad_right && cursor->x < VGA_H_PIXELS-16) 
@@ -108,6 +112,7 @@ int select_unit( void )
             wait_vsync(1);
         } while( !(pressed & gamepad_A) );        
 
+        play_sfx(sfx_select);
         if (game_info.cursor_unit<0) {
             int choice = menu(MENU_BG,4);
             switch (choice) // bg click fixme handle end / exit ?
@@ -154,6 +159,8 @@ int select_destination( int select_id )
         if (pressed & gamepad_B)
             return 0;
 
+        play_sfx(sfx_select);
+
         // get target destination
         int dest = cursor_position();
         if (dest == start) 
@@ -196,8 +203,10 @@ int select_attack_target(int attack_unit)
         uint16_t pressed = gamepad_pressed();
         if (pressed & (gamepad_up | gamepad_right)) {
             choice++;
+            play_sfx(sfx_move);
             if (choice>=game_info.nbtargets) choice -= game_info.nbtargets;
         } else if (pressed & (gamepad_down | gamepad_left)) {
+            play_sfx(sfx_move);
             choice--;
             if (choice<0) choice += game_info.nbtargets;
         }
@@ -209,7 +218,10 @@ int select_attack_target(int attack_unit)
         // update hud for targets
 
         wait_vsync(1);
-        if (pressed & gamepad_A) return game_info.targets[choice];
+        if (pressed & gamepad_A) {
+            play_sfx(sfx_select);
+            return game_info.targets[choice];
+        }
         if (pressed & gamepad_B) return -1;
     }
     // update selected ? 

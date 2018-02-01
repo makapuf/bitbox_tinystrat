@@ -1,7 +1,6 @@
 NAME := tinystrat
 
 all: data.h
-BITBOX:=sdk
 
 COLORS := blue red yellow green
 TERRAINS :=  mountains forest town fields stable sea beach \
@@ -15,13 +14,13 @@ SPRITES := units_16x16 misc_16x16 faces_26x26 fight_200x200 bignum_16x24 \
 DATAFILES := tiles_bg.tset map.map palettes.bin music/song.mod \
 	$(SPRITES:%=sprites/%.spr)
 
-GAME_C_FILES = main.c pathfinding.c player.c grid.c ai_0.c \
-	lib/blitter/blitter.c \
-	lib/blitter/blitter_tmap.c \
-	lib/blitter/blitter_sprites3.c \
-	lib/mod/mod32.c
+GAME_C_FILES = main.c pathfinding.c player.c grid.c ai_0.c sfx.c \
+	sdk/lib/blitter/blitter.c \
+	sdk/lib/blitter/blitter_tmap.c \
+	sdk/lib/blitter/blitter_sprites3.c \
+	sdk/lib/mod/mod32.c 
 
-DEFINES = VGA_MODE=400 VGA_BPP=16
+DEFINES = VGA_MODE=400 VGA_BPP=16 MOD_CHANNELS=6
 
 # graphical scripts path
 GRSCRIPTS = sdk/lib/blitter/scripts

@@ -62,7 +62,6 @@ void palette_fade(int palette_sz, object *ob, uint16_t *src_palette, uint8_t val
 // Autorepeat UDLR presses
 // call exactly once per frame 
 
-#define AUTOREPEAT_MASK (gamepad_up|gamepad_down|gamepad_left|gamepad_right)
 uint16_t gamepad_pressed(void)
 {
     static uint16_t gamepad_previous=0; 
@@ -71,12 +70,12 @@ uint16_t gamepad_pressed(void)
     uint16_t pressed = gamepad_buttons[0] & ~gamepad_previous;
     gamepad_previous = gamepad_buttons[0];
 
-    if ((gamepad_buttons[0] & AUTOREPEAT_MASK)) {
-        if (pressed & AUTOREPEAT_MASK) {
+    if ((gamepad_buttons[0] & GAMEPAD_DIRECTIONS)) {
+        if (pressed & GAMEPAD_DIRECTIONS) {
             timer=20;
         } else if (--timer==0) {
             // fire again
-            pressed |= (gamepad_buttons[0] & AUTOREPEAT_MASK);
+            pressed |= (gamepad_buttons[0] & GAMEPAD_DIRECTIONS);
             timer=4;
         }
     } 
@@ -351,6 +350,8 @@ static void combat_face_frame(object *face, uint8_t anim_id, uint8_t attacked)
 
 void combat (int attacking_unit, int attacked_unit) 
 {
+    mod_jumpto(songorder_battle);
+
     // hide all units
     for (int i=0;i<MAX_UNITS;i++)
         unit_hide(i);
@@ -461,7 +462,7 @@ void combat (int attacking_unit, int attacked_unit)
     }
 
     // wait for keypress
-    while (1) {
+    for (int i=0;i<120;i++) {
         int pressed = gamepad_pressed();
         if (pressed && gamepad_A) break;
         combat_face_frame(attacking_face,anim_id,0);
@@ -476,6 +477,7 @@ void combat (int attacking_unit, int attacked_unit)
         wait_vsync(1);
     }
 
+    // finish combat 
     blitter_remove(bg_left);
     blitter_remove(bg_right);
     blitter_remove(attacking_sprite);
@@ -499,6 +501,8 @@ void combat (int attacking_unit, int attacked_unit)
     }
 
     game_info.cursor->y -= 1024; // show cursor
+    mod_jumpto(songorder_song);
+
 }
 
 
@@ -514,15 +518,13 @@ void game_next_player()
         game_info.finished_game = 1;
     else
         game_info.current_player = next;
-
-
 }
 
 void ready_animation()
 {
-    // fixme music 
     // fixme stop at middle or something
     // fixme get ready + PLAYER 
+    mod_jumpto(songorder_next);
 
     game_info.face->fr = face_frame(game_info.current_player, face_idle);
     game_info.face->y=134;
@@ -533,6 +535,8 @@ void ready_animation()
         wait_vsync(1);
     }
     blitter_remove(next_spr);
+    wait_vsync(60);
+    mod_jumpto(songorder_song);
 }
 
 // main_menu : new game, about, ...
