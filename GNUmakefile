@@ -43,10 +43,10 @@ data.h: $(DATAFILES)
 	$(GRSCRIPTS)/mk_spr.py $< -p COUPLES -o $*.spr
 
 palettes.bin : sprites/units_16x16.spr
-	python mk_pals.py 
+	python3 mk_pals.py
 
 defs.h: mk_defs.py tiles_bg.tsx map.tmx
-	python mk_defs.py > $@
+	python3 mk_defs.py > $@
 
 %.lz4 : %
 	lz4 -f -9 --content-size --no-frame-crc --no-sparse $^ $@

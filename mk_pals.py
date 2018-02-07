@@ -14,7 +14,7 @@ colors = Image.open('colors.png').load()
 
 # load palette from original sprite
 units = Sprite('sprites/units_16x16.spr')
-print len(units.palette),'couples in palette'
+print(len(units.palette),'couples in palette')
 # build palettes from original
 def fade(c) : 
 	"fade color : average with darker grey"
