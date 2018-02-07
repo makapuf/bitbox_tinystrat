@@ -1,7 +1,7 @@
 // SFX.c : uses module player for SFX
 #include "lib/mod/mod32.h"
 
-#define SFX_CHANNEL (MOD_CHANNELS-1) // use last channel 
+#define SFX_CHANNEL (MOD_CHANNELS-1) // use last channel
 #define SFX_VOLUME 64
 #define SFX_NOTE	214
 

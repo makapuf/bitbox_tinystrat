@@ -19,12 +19,12 @@ struct Cell frontier  [FRONTIER_SIZE];      // cost, position
 void cost_init(int source)
 {
 	for (int i=0;i<SCREEN_W*SCREEN_H;i++)
-		cost_array[i] = empty_cell; 
+		cost_array[i] = empty_cell;
 	cost_array[source] = (struct Cell) {.cost=0,.pos=source};
 }
 
 // ----------------------------------------------------------------
-// - frontier 
+// - frontier
 
 static void frontier_init(int source)
 {
@@ -36,11 +36,11 @@ static void frontier_init(int source)
 static int frontier_add (int new_cost, int npos) // returns -1 if not found
 {
 	// could use a free_frontier array
-	// append to frontier : find free cell, write to it. 
-	
+	// append to frontier : find free cell, write to it.
+
 	// message("Add cost:%d x:%d y:%d to frontier\n",new_cost,npos%SCREEN_W,npos/SCREEN_W);
 	for (int i=0;i<FRONTIER_SIZE;i++) {
-		// free cell found ? 
+		// free cell found ?
 		if (cell_isempty(frontier[i])) {
 			frontier[i] = (struct Cell){.cost=new_cost, .pos=npos};
 			return i;
@@ -51,7 +51,7 @@ static int frontier_add (int new_cost, int npos) // returns -1 if not found
 }
 
 // gets minimum cost from frontier
-static struct Cell frontier_pop ( void ) 
+static struct Cell frontier_pop ( void )
 {
 	// find smallest element in frontier
 	int mini=0, minicost=MAX_COST;
@@ -66,13 +66,13 @@ static struct Cell frontier_pop ( void )
 	if (minicost==MAX_COST) return empty_cell;
 
 	// get & remove it
-	struct Cell current = frontier[mini]; 
+	struct Cell current = frontier[mini];
 	frontier[mini] = empty_cell;
 	return current;
 }
 
 // ----------------------------------------------------------------
-// - main update 
+// - main update
 
 static void try_neighbour(int npos, int from, const int max_cost, const int unit_type)
 {
@@ -99,7 +99,7 @@ void update_pathfinding ( int source_unit )
 	cost_init(source_pos);
 	frontier_init(source_pos);
 
-	while (1) 
+	while (1)
 	{
 		struct Cell current = frontier_pop();
 		if (cell_isempty(current)) { // not found ?
@@ -111,7 +111,7 @@ void update_pathfinding ( int source_unit )
 			int c_x = c%SCREEN_W;
 			int c_y = c/SCREEN_W;
 
-			// try possible neighbours 
+			// try possible neighbours
 			if (c_x>0)          try_neighbour(c-1		,c, max_cost, unit_type);
 			if (c_x<SCREEN_W-1) try_neighbour(c+1		,c, max_cost, unit_type);
 			if (c_y>0)          try_neighbour(c-SCREEN_W,c, max_cost, unit_type);
@@ -129,8 +129,8 @@ void reconstruct_path(int dst, char *path)
 
 	while(cost_array[dst].cost) { // stop if/when cost is zero  {
 		// error ?
-		if (cell_isempty(cost_array[dst]) || len==MAX_PATH) { 
-			*path='!'; 
+		if (cell_isempty(cost_array[dst]) || len==MAX_PATH) {
+			*path='!';
 			return;
 		}
 
@@ -144,10 +144,10 @@ void reconstruct_path(int dst, char *path)
 		}
 		dst=new_dst;
 		len++;
-	} 
+	}
 
 	// now pad string left
-	for (int i=0;i<=len;i++) 
+	for (int i=0;i<=len;i++)
 		path[i] = path[MAX_PATH-len+i];
     path[len]='\0';
     message("resulting path : %s\n",path);

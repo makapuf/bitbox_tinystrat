@@ -16,7 +16,7 @@ colors = Image.open('colors.png').load()
 units = Sprite('sprites/units_16x16.spr')
 print(len(units.palette),'couples in palette')
 # build palettes from original
-def fade(c) : 
+def fade(c) :
 	"fade color : average with darker grey"
 	return (c[0]+64)//2, (c[1]+64)//2, (c[2]+64)//2, c[3]
 
@@ -35,18 +35,18 @@ for a,b in units.palette : # for each couple colors in initial palette
 		newpal[c+4].append(fade(nb))
 
 # add one couple to each palette to make them 256-couples
-for p in newpal : 
+for p in newpal :
 	p += ((0,0,0,0),)*(512-len(p))
 
 # debug palettes
-if DEBUG : 
+if DEBUG :
 	dpal = Image.new('RGBA',(512,8))
 	dpal.putdata(newpal[0]+newpal[1]+newpal[2]+newpal[3]+newpal[4]+newpal[5]+newpal[6]+newpal[7])
-	dpal.save('_debug.png')	
+	dpal.save('_debug.png')
 
 # save palettes as colors to .pal file containting 4+4 palettes of 256 couples of 2 bytes/color each.
 of = open('palettes.bin','wb')
-for p in newpal : 
+for p in newpal :
 	for c in p :
 		u16 = rgba2u16(*c)
 		of.write(chr(u16&0xff)+chr(u16>>8))

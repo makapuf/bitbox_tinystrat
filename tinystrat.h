@@ -21,7 +21,7 @@ enum Player_type_enum {
 };
 
 enum Face_State {
-    face_idle, 
+    face_idle,
     face_talk,
     face_happy1,
     face_happy2,
@@ -33,13 +33,13 @@ enum Face_State {
 struct GameInfo {
 	uint8_t map_id;
 
-    uint8_t day; 
+    uint8_t day;
     unsigned finished_game:1;
     unsigned finished_turn:1;
 
     uint8_t current_player; // 0-3
 
-    int8_t cursor_unit;  // id of object under cursor, <0 : None 
+    int8_t cursor_unit;  // id of object under cursor, <0 : None
 
     // per player info
     uint8_t player_type[4]; // replace with fnpointer ?
@@ -50,15 +50,15 @@ struct GameInfo {
     // global info
     object *units [MAX_UNITS];      // frame as unit type, ptr=0 if not allocated. palette as player+aleady moved (faded)
     //object *units_health[MAX_UNITS];  // same position as unit but frame=health
-    
+
     uint16_t vram[SCREEN_W*SCREEN_H]; // map
 
     object *map;		// BG
     object *cursor;
 
-    object *face;       // for avatar : player 
+    object *face;       // for avatar : player
 
-    object *grid;   
+    object *grid;
 
     uint8_t targets[8];
     int nbtargets;
@@ -69,7 +69,7 @@ struct GameInfo {
 /*
 TODO : map 0..N (id):
     icone/nom pour choix menu
-    type : 2P, 3P, 4P -> deduit 
+    type : 2P, 3P, 4P -> deduit
     campaign
     triggers : conditions -> 1 bitmap de conditions, un callback qui verifie et s'execute eventuellement, appelé a chaque tour - pas chaque frame)
         ou un gros ? si reuse
@@ -143,4 +143,4 @@ void grid_empty();
 #define songorder_next 7
 
 void play_sfx(int sfx_id);
-void mod_jumpto(int order); 
+void mod_jumpto(int order);
