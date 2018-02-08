@@ -14,7 +14,8 @@ SPRITES := units_16x16 misc_16x16 faces_26x26 fight_200x200 bignum_16x24 \
 DATAFILES := tiles_bg.tset map.map palettes.bin music/song.mod \
 	$(SPRITES:%=sprites/%.spr)
 
-GAME_C_FILES = main.c pathfinding.c player.c grid.c ai_0.c sfx.c \
+GAME_C_FILES = main.cpp pathfinding.cpp player.cpp game.cpp grid.cpp ai_0.cpp sfx.c \
+	implems.c \
 	sdk/lib/blitter/blitter.c \
 	sdk/lib/blitter/blitter_tmap.c \
 	sdk/lib/blitter/blitter_sprites3.c \
@@ -25,7 +26,7 @@ DEFINES = VGA_MODE=400 VGA_BPP=16 MOD_CHANNELS=6
 # graphical scripts path
 GRSCRIPTS = sdk/lib/blitter/scripts
 
-main.c: data.h defs.h 
+main.cpp: data.h defs.h
 
 -include sdk/kernel/bitbox.mk
 

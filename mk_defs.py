@@ -70,6 +70,7 @@ def unit_distance_range(u) :
 
 # Headers
 # ---------------------------------
+print('#include <stdint.h>')
 print('#ifndef DEFS_DEFINITION')
 print('#define DEFS_DEFINITION')
 
@@ -144,7 +145,8 @@ print('extern const uint8_t terrain_move_cost[][NB_TERRAINS];')
 print('extern const uint8_t terrain_move_cost[][NB_TERRAINS];')
 print('extern const uint8_t unit_attack_range_table[][2];')
 print('extern const uint8_t unit_movement_range_table[];')
-
+print('extern const uint8_t level_units[][32][4];')
+print('extern const char *terrain_bg_table[];')
 print('#endif\n')
 
 

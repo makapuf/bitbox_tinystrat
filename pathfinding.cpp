@@ -2,12 +2,12 @@
 #include <stdbool.h>
 
 #include "tinystrat.h"
-#include "units.h"
+#include "unit.h"
 
 // ----------------------------------------------------------------
 // - cell
 
-static const struct Cell empty_cell=(struct Cell){.pos=0, .cost=MAX_COST};
+static const struct Cell empty_cell=(struct Cell){.cost=MAX_COST, .pos=0};
 bool cell_isempty(struct Cell c)
 {
 	return c.cost==MAX_COST;
@@ -16,7 +16,7 @@ bool cell_isempty(struct Cell c)
 struct Cell cost_array[SCREEN_W* SCREEN_H]; // cost, come_from
 struct Cell frontier  [FRONTIER_SIZE];      // cost, position
 
-void cost_init(int source)
+void cost_init(uint16_t source)
 {
 	for (int i=0;i<SCREEN_W*SCREEN_H;i++)
 		cost_array[i] = empty_cell;
@@ -26,14 +26,14 @@ void cost_init(int source)
 // ----------------------------------------------------------------
 // - frontier
 
-static void frontier_init(int source)
+static void frontier_init(uint16_t source)
 {
 	for (int i=1;i<FRONTIER_SIZE;i++)
 		frontier[i]=empty_cell;
 	frontier[0] = (struct Cell) {0,source};
 }
 
-static int frontier_add (int new_cost, int npos) // returns -1 if not found
+static int frontier_add (uint8_t new_cost, uint16_t npos) // returns -1 if not found
 {
 	// could use a free_frontier array
 	// append to frontier : find free cell, write to it.
@@ -74,9 +74,9 @@ static struct Cell frontier_pop ( void )
 // ----------------------------------------------------------------
 // - main update
 
-static void try_neighbour(int npos, int from, const int max_cost, const int unit_type)
+static void try_neighbour(uint8_t npos, uint16_t from, const int max_cost, const int unit_type)
 {
-	int new_cost = cost_array[from].cost + terrain_move_cost[unit_type][tile_terrain[game_info.vram[npos]]];
+	uint8_t new_cost = cost_array[from].cost + terrain_move_cost[unit_type][tile_terrain[game_info.vram[npos]]];
 	if (new_cost>MAX_COST) new_cost=MAX_COST;
 
 	if (new_cost < cost_array[npos].cost && new_cost<=max_cost) {
@@ -89,11 +89,11 @@ static void try_neighbour(int npos, int from, const int max_cost, const int unit
 
 
 // updates cost_array and frontier, from source_unit type and position, and max travel distance
-void update_pathfinding ( int source_unit )
+void update_pathfinding ( const Unit &source )
 {
 	// Dijkstra algorithm
-	uint16_t source_pos = unit_get_pos(source_unit);
-	const uint8_t unit_type = unit_get_type(source_unit);
+	uint16_t source_pos = source.position();
+	const uint8_t unit_type = source.type();
 	uint8_t  max_cost = unit_movement_range_table[unit_type];
 
 	cost_init(source_pos);

@@ -1,8 +1,10 @@
 #include "tinystrat.h"
 #include "defs.h"
-#include "units.h"
-
-/* updates info about terrain under mouse_cursor 
+#include "unit.h"
+extern "C" {
+#include "sdk/lib/blitter/blitter.h" // object
+}
+/* updates info about terrain under mouse_cursor
    returns the unit under mouse_cursor if any or NULL
    */
 void update_cursor_info(void)
@@ -12,16 +14,16 @@ void update_cursor_info(void)
     // "blink" mouse_cursor
     cursor->fr=(vga_frame/32)%2 ? fr_unit_cursor : fr_unit_cursor2;
 
-    // terrain under the mouse_cursor    
+    // terrain under the mouse_cursor
     const uint16_t tile_id = game_info.vram[(cursor->y/16)*SCREEN_W + cursor->x/16];
     int terrain_id = tile_terrain[tile_id];
-    game_info.vram[3]=tile_id; 
+    game_info.vram[3]=tile_id;
     // defense info
     game_info.vram[6]=tile_zero + terrain_defense[terrain_id];
 
     // find unit under mouse_cursor - if any
-    game_info.cursor_unit = unit_at(cursor->x/16 + (cursor->y/16)*SCREEN_W);
-    
+    game_info.cursor_unit = game_info.unit_at(cursor->x/16 + (cursor->y/16)*SCREEN_W);
+
     draw_hud();
 }
 
@@ -32,13 +34,13 @@ void move_cursor(uint16_t gamepad_pressed)
     if (gamepad_pressed && GAMEPAD_DIRECTIONS)
         play_sfx(sfx_move);
 
-    if (gamepad_pressed & gamepad_left && cursor->x > 0) 
+    if (gamepad_pressed & gamepad_left && cursor->x > 0)
         cursor->x -= 16;
-    if (gamepad_pressed & gamepad_right && cursor->x < VGA_H_PIXELS-16) 
+    if (gamepad_pressed & gamepad_right && cursor->x < VGA_H_PIXELS-16)
         cursor->x += 16;
-    if (gamepad_pressed & gamepad_up && cursor->y > 16) 
+    if (gamepad_pressed & gamepad_up && cursor->y > 16)
         cursor->y -= 16;
-    if (gamepad_pressed & gamepad_down && cursor->y < VGA_V_PIXELS-16) 
+    if (gamepad_pressed & gamepad_down && cursor->y < VGA_V_PIXELS-16)
         cursor->y += 16;
 }
 
@@ -60,7 +62,7 @@ unsigned int menu(int menu_id, int nb_choices)
     menu->fr = menu_id;
 
     // select option
-    // wait for keypress / animate 
+    // wait for keypress / animate
     const uint8_t bullet_animation[] = {
         fr_unit_bullet1,
         fr_unit_bullet2,
@@ -75,12 +77,12 @@ unsigned int menu(int menu_id, int nb_choices)
         if (pressed & gamepad_up) {
             if (choice==0)
                 choice = nb_choices-1;
-            else 
+            else
                 choice--;
         } else if (pressed & gamepad_down) {
             if (choice==nb_choices-1)
                 choice = 0;
-            else 
+            else
                 choice++;
         } else if (pressed & gamepad_A) {
             break;
@@ -99,52 +101,51 @@ unsigned int menu(int menu_id, int nb_choices)
     return (pressed & gamepad_A) ? choice+1 : 0;
 }
 
-int select_unit( void )
+Unit* select_unit( void )
 {
-    color_grid_units();
+    game_info.grid.color_units();
     // wait till button A pressed on one of my units.
     while(1) {
         uint16_t pressed;
-        do { 
+        do {
             pressed  = gamepad_pressed();
             move_cursor(pressed);
             update_cursor_info();
             wait_vsync(1);
-        } while( !(pressed & gamepad_A) );        
+        } while( !(pressed & gamepad_A) );
 
         play_sfx(sfx_select);
         if (game_info.cursor_unit<0) {
             int choice = menu(MENU_BG,4);
             switch (choice) // bg click fixme handle end / exit ?
             {
-                case 4 : 
-                    game_info.finished_turn=1; 
-                    return -1; // 
+                case 4 :
+                    game_info.finished_turn=1;
+                    return nullptr;
                 default : // help, options, save ...
                     break;
             }
         } else {
-            int u  = game_info.cursor_unit;
-            if ( unit_get_player(u)==game_info.current_player && !unit_has_moved(u)) {
-                return game_info.cursor_unit;
+            Unit *u  = game_info.cursor_unit;
+            if ( u->player()==game_info.current_player && !u->moved()) {
+                return u;
             }
         }
     }
 }
 
 
-int select_destination( int select_id )
+int select_destination( Unit * selected )
 {
     int start = cursor_position();
-    color_grid_movement_range();
+    game_info.grid.color_movement_range();
 
     // wait till button A pressed and on an empty space
     while(1) {
         uint16_t pressed;
-        while(1) { 
-            // animate selected unit 
-            object *o = game_info.units[select_id];
-            o->y = (o->y/16)*16 + ((vga_frame/16)%2 ? 1 : 0);
+        while(1) {
+            // animate selected unit
+            selected->y = (selected->y/16)*16 + ((vga_frame/16)%2 ? 1 : 0);
 
             pressed = gamepad_pressed();
             move_cursor(pressed);
@@ -163,10 +164,10 @@ int select_destination( int select_id )
 
         // get target destination
         int dest = cursor_position();
-        if (dest == start) 
+        if (dest == start)
             return dest; // do not move : nothing to check
 
-        if (game_info.cursor_unit==-1) { // check no unit on dest. 
+        if (game_info.cursor_unit==nullptr) { // check no unit on dest.
 
             // check tile within range
             struct Cell dest_cell = cost_array[dest];
@@ -184,22 +185,22 @@ int select_destination( int select_id )
             continue;
         }
     }
-    grid_empty();
+    game_info.grid.clear();
 }
 
 
 
 // unit selected, already positioned to attack position
-int select_attack_target(int attack_unit)
+Unit * select_attack_target()
 {
-    color_grid_targets();
+    game_info.grid.color_targets();
 
     // check any ?
-    if (game_info.nbtargets==0) return -1;
+    if (game_info.nbtargets==0) return nullptr;
 
     // select targets and display them.
-    int choice=0; 
-    while(1) { 
+    int choice=0; // index in targets
+    while(1) {
         uint16_t pressed = gamepad_pressed();
         if (pressed & (gamepad_up | gamepad_right)) {
             choice++;
@@ -211,9 +212,9 @@ int select_attack_target(int attack_unit)
             if (choice<0) choice += game_info.nbtargets;
         }
 
-        object *o = game_info.units[game_info.targets[choice]];
-        game_info.cursor->x = o->x;
-        game_info.cursor->y = o->y;
+        Unit *u = game_info.targets[choice];
+        game_info.cursor->x = u->x;
+        game_info.cursor->y = u->y;
         game_info.cursor->fr = fr_unit_cursor + ((vga_frame/16)%2 ? 1 : 0);
         // update hud for targets
 
@@ -222,9 +223,9 @@ int select_attack_target(int attack_unit)
             play_sfx(sfx_select);
             return game_info.targets[choice];
         }
-        if (pressed & gamepad_B) return -1;
+        if (pressed & gamepad_B) return nullptr;
     }
-    // update selected ? 
+    // update selected ?
 
 }
 
@@ -241,66 +242,66 @@ void human_game_turn()
     game_info.cursor->x=0;
 
     for (int i=0;i<MAX_UNITS;i++) {
-        if (game_info.units[i])
-            unit_reset_moved(i);
+        Unit *u = game_info.units[i];
+        if (u) u->moved(false);
     }
 
     harvest();
 
     while (1) {
-        int select_id = select_unit();
-        message("selected unit %d\n",select_id);
+        Unit *selected = select_unit();
+        message("selected unit :\n"); selected->info();
 
-        if (game_info.finished_turn) 
+        if (game_info.finished_turn)
             break; // end of turn : exit loop
 
-        update_pathfinding(select_id);
+        update_pathfinding(*selected);
 
-        int dest = select_destination(select_id);
+        int dest = select_destination(selected);
         message("selected dest : %d\n",dest);
         if (!dest) continue;
-        // save old position        
-        uint16_t old_pos = unit_get_pos(select_id);
+        // save old position
+        uint16_t old_pos = selected->position();
 
         reconstruct_path(dest, path);
-        unit_moveto(select_id, path);
+        selected->moveto(path);
 
         // Action menu for post-move actions (Attack)
 
-        get_possible_targets(select_id);
+        get_possible_targets(*selected);
 
         int action;
-        if (game_info.nbtargets>0) // if there is anything to attack 
-            action = menu(MENU_ATTACK,3); 
-        else 
+        if (game_info.nbtargets>0) // if there is anything to attack
+            action = menu(MENU_ATTACK,3);
+        else
             action = menu(MENU_EMPTY,2)+1;
 
 
         message("action %d\n",action);
         switch(action)
         {
-            case 0: // cancel 
+            case 0: // cancel
             case 3:
                 // restore position
-                unit_set_pos(select_id, old_pos);
+                selected->position(old_pos);
                 break;
 
             case 1 : // attack
                 {
-                    int tgt = select_attack_target(select_id);
-                    grid_empty();
+                    Unit *tgt = select_attack_target();
+                    game_info.grid.clear();
 
-                    if (tgt>=0) 
-                        combat(select_id,tgt); 
+                    if (tgt>=0)
+                        combat(*selected,*tgt);
                 }
-                unit_set_moved (select_id);
+                selected->moved (true);
                 break;
-                
+
             case 2 : // wait : do nothing, set player moved.
-                unit_set_moved (select_id);
+                selected->moved (true);
                 break;
         }
-    
+
     }
     message("- End of turn\n");
 }
