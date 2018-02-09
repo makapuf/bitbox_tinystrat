@@ -24,7 +24,7 @@ void update_cursor_info(void)
     // find unit under mouse_cursor - if any
     game_info.cursor_unit = game_info.unit_at(cursor->x/16 + (cursor->y/16)*SCREEN_W);
 
-    draw_hud();
+    game_info.draw_hud();
 }
 
 void move_cursor(uint16_t gamepad_pressed)
@@ -246,7 +246,7 @@ void human_game_turn()
         if (u) u->moved(false);
     }
 
-    harvest();
+    game_info.harvest();
 
     while (1) {
         Unit *selected = select_unit();
@@ -268,7 +268,7 @@ void human_game_turn()
 
         // Action menu for post-move actions (Attack)
 
-        get_possible_targets(*selected);
+        game_info.get_possible_targets(*selected);
 
         int action;
         if (game_info.nbtargets>0) // if there is anything to attack

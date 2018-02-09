@@ -54,8 +54,6 @@ void load_map (int map_id); // (re) load map background
 #define GAMEPAD_DIRECTIONS (gamepad_up|gamepad_down|gamepad_left|gamepad_right)
 uint16_t gamepad_pressed(void);
 void combat (Unit &attacking_unit, Unit &attacked_unit);
-void draw_hud( void );
-void harvest(void); // harvest for current player
 
 void human_game_turn(void);
 void play_CPU0 (void);

@@ -20,7 +20,7 @@ void play_CPU0 ()
 		Unit *u = game_info.units[i];
         if (u) u->moved(false);
     }
-    harvest();
+    game_info.harvest();
 
 	for (int unit_id=0;unit_id<NB_UNITS;unit_id++) { // randomize order ?
 		Unit *u = game_info.units[unit_id];

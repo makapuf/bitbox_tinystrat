@@ -41,7 +41,20 @@ struct Game {
 
     Unit *unit_at(int pos);
 	Unit *unit_new (uint8_t x, uint8_t y, uint8_t type, uint8_t player_id );
-	void unit_remove(Unit *u);
+	void  unit_remove(Unit *u);
+
+	void harvest(); // harvest for current player
+
+	void init();
+	void next_player();
+	void start_level(int level);
+	void leave_level();
+	void get_possible_targets(Unit &attacking);
+
+	int face_frame(int player, enum Face_State st) { return player_avatar[player]*face_NB+st; }
+	void ready_animation();
+	void draw_hud();
+
 
 };
 

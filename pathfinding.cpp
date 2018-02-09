@@ -8,10 +8,6 @@
 // - cell
 
 static const struct Cell empty_cell=(struct Cell){.cost=MAX_COST, .pos=0};
-bool cell_isempty(struct Cell c)
-{
-	return c.cost==MAX_COST;
-}
 
 struct Cell cost_array[SCREEN_W* SCREEN_H]; // cost, come_from
 struct Cell frontier  [FRONTIER_SIZE];      // cost, position
@@ -23,6 +19,7 @@ void cost_init(uint16_t source)
 	cost_array[source] = (struct Cell) {.cost=0,.pos=source};
 }
 
+bool cell_isempty(struct Cell c) {	return c.cost==MAX_COST; }
 // ----------------------------------------------------------------
 // - frontier
 
@@ -114,7 +111,7 @@ void update_pathfinding ( const Unit &source )
 			// try possible neighbours
 			if (c_x>0)          try_neighbour(c-1		,c, max_cost, unit_type);
 			if (c_x<SCREEN_W-1) try_neighbour(c+1		,c, max_cost, unit_type);
-			if (c_y>0)          try_neighbour(c-SCREEN_W,c, max_cost, unit_type);
+			if (c_y>1)          try_neighbour(c-SCREEN_W,c, max_cost, unit_type);
 			if (c_y<SCREEN_H-1) try_neighbour(c+SCREEN_W,c, max_cost, unit_type);
 		}
 	}
