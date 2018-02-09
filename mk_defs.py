@@ -68,6 +68,13 @@ def unit_attack_range(u) :
 def unit_distance_range(u) :
 	return {'foot':5,'wheels':4,'horse':10,'boat':10}[unit_type(u)]
 
+resources_terrains = [
+    ('food', 'fields'),
+    ('gold', 'town'),
+    ('wood', 'forest'),
+    ('stone','mountains'),
+]
+
 # Headers
 # ---------------------------------
 print('#include <stdint.h>')
@@ -147,6 +154,7 @@ print('extern const uint8_t unit_attack_range_table[][2];')
 print('extern const uint8_t unit_movement_range_table[];')
 print('extern const uint8_t level_units[][32][4];')
 print('extern const char *terrain_bg_table[];')
+print('extern const uint8_t resource_terrain[];')
 print('#endif\n')
 
 
@@ -158,7 +166,7 @@ print('#ifdef DEFS_IMPLEMENTATION')
 # tile -> terrain
 cnt = int(tsx.get('tilecount'))
 col = int(tsx.get('columns'))
-print('const uint8_t tile_terrain[%d] = { 255, '%(cnt+1)) # tile zero is whatever
+print('const uint8_t tile_terrain[%d] = { 255,'%(cnt+1)) # tile zero is whatever
 for i in range((cnt+col-1)//col) :
 	print('    '+''.join('%d,'%(tile2terrain.get(i*col+j,255)) for j in range(col)))
 print('};')
@@ -178,32 +186,32 @@ print('};')
 print('const uint8_t terrain_defense[%d] = {'%len(terrains))
 for elt in tsx.findall('terraintypes/terrain') :
 	defn = elt.find('properties/property[@name="defense"]').get('value')
-	print("    [terrain_%s]=%d, "%(elt.get('name'),int(defn)+1))
+	print("    [terrain_%s]=%d,"%(elt.get('name'),int(defn)+1))
 print('};')
 
 # terrain backgrounds
 print("const char *terrain_bg_table[] = {")
 for t in terrains :
-	print("    [terrain_%s] = &data_bg_%s_spr[0], "%(t,t))
+	print("    [terrain_%s] = &data_bg_%s_spr[0],"%(t,t))
 print("};")
 
 # terrain/unit movement cost
 print('const uint8_t terrain_move_cost[%d][%d]={'%(len(units),len(terrains)))
 for u in units :
-	print('  {%s}, // %s'%(','.join(str(speed(u,t)) for t in terrains),u))
+	print('    {%s}, // %s'%(','.join(str(speed(u,t)) for t in terrains),u))
 print('};')
 
 # unit/unit attack efficiency 0-16
 print('const uint8_t unit_damage_table[%d][%d]={'%(len(units),len(units)))
 for u_of in units :
-	print('  {%s}, // %s'%(','.join(str(damage(u_of,u_to)) for u_to in units),u_of))
+	print('    {%s}, // %s'%(','.join(str(damage(u_of,u_to)) for u_to in units),u_of))
 print('};')
 
 # unit/unit attack range in tiles
 print('const uint8_t unit_attack_range_table[%d][2]={'%len(units))
 for u in units :
 	r = unit_attack_range(u)
-	print('  {%d, %d}, // %s'%(r[0],r[1],u))
+	print('    {%d, %d}, // %s'%(r[0],r[1],u))
 print('};')
 
 # unit travel distance
@@ -212,6 +220,13 @@ for u in units :
 	r = unit_distance_range(u)
 	print('    %d, // %s'%(r,u))
 print('};')
+
+
+print('const uint8_t resource_terrain[4]={ // per resource')
+for resource,terrain in resources_terrains :
+	print('    [resource_{0}]  = terrain_{1},'.format(resource,terrain))
+print('};')
+
 
 # map units
 # --------------------------
