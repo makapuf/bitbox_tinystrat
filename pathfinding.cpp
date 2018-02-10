@@ -3,6 +3,7 @@
 
 #include "tinystrat.h"
 #include "unit.h"
+#include "game.h"
 
 // ----------------------------------------------------------------
 // - cell

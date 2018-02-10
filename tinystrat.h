@@ -5,7 +5,7 @@ extern "C" {
 #include "sdk/lib/blitter/blitter.h" // object
 }
 
-struct Unit;
+#define MAX_UNITS 32 // total max number of units on screen
 
 #define SCREEN_W 25
 #define SCREEN_H 19
@@ -53,12 +53,9 @@ void load_map (int map_id); // (re) load map background
 
 #define GAMEPAD_DIRECTIONS (gamepad_up|gamepad_down|gamepad_left|gamepad_right)
 uint16_t gamepad_pressed(void);
-void combat (Unit &attacking_unit, Unit &attacked_unit);
 
 void human_game_turn(void);
 void play_CPU0 (void);
-
-void get_possible_targets(Unit &attacking); // main
 
 // -- path finding structures and functions
 
@@ -73,10 +70,6 @@ bool cell_isempty(const struct Cell c);
 
 extern struct Cell cost_array[SCREEN_W* SCREEN_H]; // cost, come_from
 extern struct Cell frontier  [FRONTIER_SIZE];      // cost, position
-
-// updates cost_array and frontier
-// from source, up to max_cost (included)
-void update_pathfinding ( const Unit &source );
 
 // once cost_array has been created, find the path from an array
 void reconstruct_path(int dst, char *path);

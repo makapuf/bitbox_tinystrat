@@ -6,13 +6,13 @@
 #include "tinystrat.h"
 #include "defs.h"
 
-#include "game.h"
-
 extern "C" { void sprite3_cpl_line_noclip (struct object *o); }
 #define YLIFE 15
 
 struct Unit : public object
 {
+    bool operator!() { return line==nullptr; } // truth testing
+
     // return unit_type_id
     int  type () const { return fr/8; }
     void type (int typeunit_id) { fr = typeunit_id*8; };
@@ -29,6 +29,7 @@ struct Unit : public object
     // frame 0-1, direction nsew
     void set_frame (int direction, int frame) { fr = (fr & ~7) | direction*2 | frame; }
 
+
     bool moved () const { return palette()/4; }
     void moved (bool moved) { palette( player() + (moved ? 4 : 0)); }
 
@@ -37,13 +38,9 @@ struct Unit : public object
     void     position (uint16_t pos) { x = (pos%SCREEN_W)*16; y = (pos/SCREEN_W)*16; }
 
     // get the terrain type of this position
-    uint8_t terrain() const
-    {
-        return tile_terrain[game_info.vram[position()]];
-    }
+    uint8_t terrain() const;
 
-
-    bool can_attack(Unit &attacked) const
+    bool can_attack(const Unit &attacked) const
     {
         const int dist = mdistance(attacked);
         const int attack_type = type();
@@ -131,9 +128,18 @@ struct Unit : public object
 
         // overdraw life as object->c
         const int y=vga_line-o->ry;
-        if (y >= (int)16-o->c ) {
+        if (y >= 16-(int)o->c ) {
             draw_buffer[o->x+1]=RGB(y*20-100,305-y*20,0);
         }
         // fixme color green -> yellow -> red pixel colors gradient , not same
     }
 };
+
+
+// updates cost_array and frontier
+// from source, up to max_cost (included)
+void update_pathfinding ( const Unit &source );
+
+void get_possible_targets(Unit &attacking); // main
+
+void combat (Unit &attacking_unit, Unit &attacked_unit);

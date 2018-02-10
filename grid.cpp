@@ -7,24 +7,30 @@ extern "C" {
 
 #include "tinystrat.h"
 #include "unit.h"
+#include "game.h"
+
+#include "grid.h"
 
 #define GRID_COLOR  RGB(100,100,180)<<16 | RGB(80,80,150) // default
 #define GRID_SPEED  32
 
+extern Game game_info;
+
 Grid::Grid(void)
 {
-	o = blitter_new();
-	o->x = 0;
-	o->y = 16;
-	o->w = SCREEN_W*16;
-	o->h = SCREEN_H*16;
-	o->z = 50;
+	o.x = 0;
+	o.y = 16;
+	o.w = SCREEN_W*16;
+	o.h = SCREEN_H*16;
+	o.z = 50;
 
-	o->data = data;
-	o->frame = 0; // check grid empty & skip lines ? line by line ?
-	o->line = grid_line;
+	o.data = data;
+	o.frame = 0; // check grid empty & skip lines ? line by line ?
+	o.line = grid_line;
 
-	o->a = GRID_COLOR; // mode, used as color for now
+	o.a = GRID_COLOR; // mode, used as color for now
+
+	blitter_insert(&o);
 
 	clear();
 }
@@ -80,10 +86,10 @@ void Grid::color_units(void)
 {
 	clear();
 	for (int i=0;i<MAX_UNITS;i++) {
-        Unit *u = game_info.units[i];
+        Unit &u = game_info.units[i];
 
-		if (u && u->player() == game_info.current_player)
-			data[u->y/16-1] |= 1<<(u->x/16);
+		if (!!u && u.player() == game_info.current_player)
+			data[u.y/16-1] |= 1<<(u.x/16);
 	}
 }
 

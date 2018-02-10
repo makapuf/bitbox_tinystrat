@@ -9,8 +9,8 @@ struct Grid {
     void color_units(void);
     void color_targets(void);
     // ---
+    object o; // graphical object in blitter -> fixme inherit ?
     uint32_t data[32]; // 32 bits per line - use a bit array ?
-    object *o; // graphical object in blitter
     // ---
     static void grid_line (struct object *o);
 };

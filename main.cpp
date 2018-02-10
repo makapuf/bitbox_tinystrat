@@ -85,68 +85,70 @@ void intro()
 {
     wait_vsync(15); // little pause
 
-    object *bg = sprite3_new(data_intro_bg_spr, 0,0,200);
+    object bg;
+    sprite3_insert(&bg, data_intro_bg_spr, 0,0,200);
 
     #define BGPAL 64 // couples
     // replace with ram palette
-    uint16_t *src_pal = (uint16_t*) bg->b; // in rom
-    bg->b = (uintptr_t) ram_palette;
+    uint16_t *src_pal = (uint16_t*) bg.b; // in rom
+    bg.b = (uintptr_t) ram_palette;
 
 
     // fade-in palette
     for (int i=0;i<255;i+=3) {
-        palette_fade(BGPAL, bg, src_pal, i);
+        palette_fade(BGPAL, &bg, src_pal, i);
         wait_vsync(1);
     }
 
     wait_vsync(15);
 
     // fixme enter left/right ...
-    object *horse_l = sprite3_new(data_intro_horse_left_spr, 0,     50,10);
+    object horse_l, horse_r, obj_l, obj_r, tiny, wars;
+
+    sprite3_insert(&horse_l, data_intro_horse_left_spr, 0,     50,10);
     wait_vsync(15);
-    object *horse_r = sprite3_new(data_intro_horse_right_spr, 330,  50,10);
+    sprite3_insert(&horse_r,data_intro_horse_right_spr, 330,  50,10);
     wait_vsync(15);
-    object *obj_l = sprite3_new(data_intro_objects_left_spr,    0,  30,7);
+    sprite3_insert(&obj_l, data_intro_objects_left_spr,    0,  30,7);
     wait_vsync(15);
-    object *obj_r = sprite3_new(data_intro_objects_right_spr, 330,  30,7);
+    sprite3_insert(&obj_r,data_intro_objects_right_spr, 330,  30,7);
     wait_vsync(15);
 
-
-    object *tiny = sprite3_new(data_intro_tiny_spr, -16,140,10);
+    sprite3_insert(&tiny, data_intro_tiny_spr, -16,140,10);
     wait_vsync(30);
     for (int i=0;i<50;i++) {
-        tiny->x += 4;
+        tiny.x += 4;
         wait_vsync(1);
     }
     wait_vsync(40);
 
-    object *wars = sprite3_new(data_intro_wars_spr, 20,-200,10);
+    sprite3_insert(&wars,data_intro_wars_spr, 20,-200,10);
     while (!GAMEPAD_PRESSED(0,start)) {
-        if (wars->y<140)
-            wars->y+=16;
+        if (wars.y<140)
+            wars.y+=16;
         else
-            wars->y = 166+sinus(vga_frame)/32;
+            wars.y = 166+sinus(vga_frame)/32;
         wait_vsync(1);
     }
 
     // fade out bg & remove
     for (int i=0;i<255;i+=4) {
-        wars->y -= 16;
+        wars.y -= 16;
         // FIXME CLIPPING
         // tiny->x += 8;
         // horse_l->x -= 16;
         // horse_r->x += 16;
-        palette_fade(BGPAL, bg, src_pal, 255-i);
+        palette_fade(BGPAL, &bg, src_pal, 255-i);
         wait_vsync(1);
     }
 
-    blitter_remove(bg);
-    blitter_remove(wars);
-    blitter_remove(tiny);
-    blitter_remove(horse_l);
-    blitter_remove(horse_r);
-    blitter_remove(obj_r);
-    blitter_remove(obj_l);
+    blitter_remove(&bg);
+    blitter_remove(&wars);
+    blitter_remove(&tiny);
+    blitter_remove(&horse_l);
+    blitter_remove(&horse_r);
+    blitter_remove(&obj_r);
+    blitter_remove(&obj_l);
 
     message("End of intro.\n");
 }
@@ -158,15 +160,16 @@ int main_menu()
 {
     wait_vsync(15); // little pause
 
-    object *bg = sprite3_new(data_main_menu_spr, 0,0,200);
+    object bg;
+    sprite3_insert(&bg, data_main_menu_spr, 0,0,200);
 
     // replace with ram palette
-    uint16_t *src_pal = (uint16_t*) bg->b; // in rom
-    bg->b = (uintptr_t) ram_palette;
+    uint16_t *src_pal = (uint16_t*) bg.b; // in rom
+    bg.b = (uintptr_t) ram_palette;
 
     // fade-in palette
     for (int i=0;i<255;i+=3) {
-        palette_fade(255, bg, src_pal, i);
+        palette_fade(255, &bg, src_pal, i);
         wait_vsync(1);
     }
 
@@ -176,11 +179,11 @@ int main_menu()
 
     // fade-out palette
     for (int i=0;i<255;i+=4) {
-        palette_fade(255, bg, src_pal, 255-i);
+        palette_fade(255, &bg, src_pal, 255-i);
         wait_vsync(1);
     }
 
-    blitter_remove(bg);
+    blitter_remove(&bg);
     return 0;
 }
 

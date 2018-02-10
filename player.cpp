@@ -1,15 +1,19 @@
 #include "tinystrat.h"
 #include "defs.h"
 #include "unit.h"
+#include "game.h"
+
 extern "C" {
 #include "sdk/lib/blitter/blitter.h" // object
 }
+
+// fixme put in game
 /* updates info about terrain under mouse_cursor
    returns the unit under mouse_cursor if any or NULL
    */
 void update_cursor_info(void)
 {
-    object * const cursor = game_info.cursor;
+    object * const cursor = &game_info.cursor;
 
     // "blink" mouse_cursor
     cursor->fr=(vga_frame/32)%2 ? fr_unit_cursor : fr_unit_cursor2;
@@ -29,7 +33,7 @@ void update_cursor_info(void)
 
 void move_cursor(uint16_t gamepad_pressed)
 {
-    object * const cursor = game_info.cursor;
+    object * const cursor = &game_info.cursor;
 
     if (gamepad_pressed && GAMEPAD_DIRECTIONS)
         play_sfx(sfx_move);
@@ -47,7 +51,7 @@ void move_cursor(uint16_t gamepad_pressed)
 // get cursor position on tilemap
 int cursor_position (void)
 {
-    object *const c = game_info.cursor;
+    object *const c = &game_info.cursor;
     return (c->y/16)*SCREEN_W + c->x/16;
 }
 
@@ -55,11 +59,12 @@ int cursor_position (void)
 // returns a choice between 1 and nb_choices or zero to cancel
 unsigned int menu(int menu_id, int nb_choices)
 {
-    object *menu   = sprite3_new(data_menus_88x82_spr,MENU_X*16,MENU_Y*16,  1);
-    object *bullet = sprite3_new(data_units_16x16_spr,MENU_X*16,MENU_Y*16+8,0);
+    object menu, bullet;
+    sprite3_insert(&menu  , data_menus_88x82_spr,MENU_X*16,MENU_Y*16,  1);
+    sprite3_insert(&bullet, data_units_16x16_spr,MENU_X*16,MENU_Y*16+8,0);
 
     // unroll menu ?
-    menu->fr = menu_id;
+    menu.fr = menu_id;
 
     // select option
     // wait for keypress / animate
@@ -90,13 +95,13 @@ unsigned int menu(int menu_id, int nb_choices)
             break;
         }
 
-        bullet->fr = bullet_animation[(vga_frame/16)%4];
-        bullet->y  =  MENU_Y*16+8+choice*16;
+        bullet.fr = bullet_animation[(vga_frame/16)%4];
+        bullet.y  =  MENU_Y*16+8+choice*16;
         wait_vsync(1);
     }
 
-    blitter_remove(bullet);
-    blitter_remove(menu);
+    blitter_remove(&bullet);
+    blitter_remove(&menu);
 
     return (pressed & gamepad_A) ? choice+1 : 0;
 }
@@ -213,9 +218,9 @@ Unit * select_attack_target()
         }
 
         Unit *u = game_info.targets[choice];
-        game_info.cursor->x = u->x;
-        game_info.cursor->y = u->y;
-        game_info.cursor->fr = fr_unit_cursor + ((vga_frame/16)%2 ? 1 : 0);
+        game_info.cursor.x = u->x;
+        game_info.cursor.y = u->y;
+        game_info.cursor.fr = fr_unit_cursor + ((vga_frame/16)%2 ? 1 : 0);
         // update hud for targets
 
         wait_vsync(1);
@@ -238,11 +243,11 @@ void human_game_turn()
     message ("starting player %d turn\n", game_info.current_player);
     game_info.finished_turn = 0;
 
-    game_info.cursor->y=16;
-    game_info.cursor->x=0;
+    game_info.cursor.y=16;
+    game_info.cursor.x=0;
 
     for (int i=0;i<MAX_UNITS;i++) {
-        Unit *u = game_info.units[i];
+        Unit *u = &game_info.units[i];
         if (u) u->moved(false);
     }
 
