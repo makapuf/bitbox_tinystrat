@@ -3,6 +3,10 @@
 #include "tinystrat.h"
 #include "data.h"
 
+extern "C" {
+#include "lib/mod/mod32.h"
+}
+
 static void combat_face_frame(object *face, uint8_t anim_id, uint8_t attacked)
 {
     // set combat faces

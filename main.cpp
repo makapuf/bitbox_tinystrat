@@ -4,6 +4,7 @@
 extern "C" {
 #include "bitbox.h"
 #include "lib/blitter/blitter.h"
+#include "lib/mod/mod32.h"
 }
 
 #include "data.h" // palette
@@ -15,6 +16,13 @@ extern "C" {
 #include "unit.h"
 #include "grid.h"
 
+#define SFX_CHANNEL (MOD_CHANNELS-1) // use last channel
+#define SFX_VOLUME 64
+#define SFX_NOTE    214
+
+void play_sfx(int sample_id) {
+    mod_play_note(sample_id,SFX_CHANNEL,SFX_VOLUME,SFX_NOTE);
+}
 
 Game game_info;
 

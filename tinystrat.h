@@ -74,7 +74,7 @@ extern struct Cell frontier  [FRONTIER_SIZE];      // cost, position
 // once cost_array has been created, find the path from an array
 void reconstruct_path(int dst, char *path);
 
-// SFX
+// Audio
 #define sfx_move 2
 #define sfx_select 3
 #define sfx_explode 4
@@ -83,7 +83,4 @@ void reconstruct_path(int dst, char *path);
 #define songorder_battle 6
 #define songorder_next 7
 
-extern "C" {
-void play_sfx(int sfx_id);
-void mod_jumpto(int order);
-}
+void play_sfx(int sample_id);
