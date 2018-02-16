@@ -64,7 +64,7 @@ struct Unit : public object
     void show () { y &= ~1024; }
 
     void info() const { // tostring ?
-        message ("unit:%d - player:%d type:%s on terrain:%s\n",
+        message ("unit: player:%d type:%s on terrain:%s\n",
                 player(), unit_names[type()], terrain_names[terrain()]
                 );
     }
@@ -127,7 +127,7 @@ struct Unit : public object
         sprite3_cpl_line_noclip(o);
 
         // overdraw life as object->c
-        const int y=vga_line-o->ry;
+        const int y=vga_line-o->y;
         if (y >= 16-(int)o->c ) {
             draw_buffer[o->x+1]=RGB(y*20-100,305-y*20,0);
         }

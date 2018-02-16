@@ -25,7 +25,7 @@ static void fight_animation( void )
 {
     // wait keypress
     object fight_spr;
-    sprite3_insert(&fight_spr, data_fight_200x200_spr,100,70,3);
+    sprite3_load(&fight_spr, data_fight_200x200_spr,100,70,3);
     static const uint8_t fight_anim[8] = {0,1,2,1,3,0,2,1};
     for (int i=0;i<60;i++) {
         fight_spr.fr = fight_anim[(vga_frame/16)%8];
@@ -48,19 +48,18 @@ struct Opponent {
         const uint8_t terrain = unit.terrain();
         const uint8_t player = unit.player();
 
-        sprite3_insert(&bg,terrain_bg_table[terrain],left ? 0 : 200, left?-200:300,35);
-
-        sprite3_insert(&sprite, data_units_16x16_spr, left ? -30 : 410, 180, 5 );
+        sprite3_load(&bg,terrain_bg_table[terrain],left ? 0 : 200, left?-200:300,35);
+        sprite3_load(&sprite, data_units_16x16_spr, left ? -30 : 410, 180, 5 );
         // also other units ...
         sprite.d |= 1; // set render 2X
         sprite.h *= 2;
         sprite.fr = unit.type()*8 + (left ? 0 : 2); // facing left
         sprite_set_palette(&sprite, player);
 
-        sprite3_insert(&life, data_bignum_16x24_spr, left ? 34 : 340,52,5);
+        sprite3_load(&life, data_bignum_16x24_spr, left ? 34 : 340,52,5);
         life.fr = unit.health();
 
-        sprite3_insert(&face,data_faces_26x26_spr,left ? 0:360,52,5);
+        sprite3_load(&face,data_faces_26x26_spr,left ? 0:360,52,5);
         face.fr = game_info.face_frame(player, face_idle);
         face.h  = 26;
     }

@@ -35,7 +35,7 @@ Unit *Game::unit_new (uint8_t x, uint8_t y, uint8_t type, uint8_t player_id )
 
     // allocate sprite
     Unit *u = &units[uid];
-    sprite3_insert(u, data_units_16x16_spr, x*16, y*16, 5 ); // put below cursors
+    sprite3_load(u, data_units_16x16_spr, x*16, y*16, 5 ); // put below cursors
     u->line = Unit::graph_line; // replace with unit drawing
     u->frame = 0; // do not change line draw - no clip
 
@@ -81,7 +81,7 @@ void Game::ready_animation()
 
     object next_spr;
 
-    sprite3_insert(&next_spr, data_next_player_spr,-60,130,1);
+    sprite3_load(&next_spr, data_next_player_spr,-60,130,1);
     for (int t=-80;t<80;t++) {
         next_spr.x = (VGA_H_PIXELS-next_spr.w)/2+t*t*t/2048;
         face.x=next_spr.x+2;
@@ -113,13 +113,13 @@ void Game::init()
     // for game only, not intro
 
     // init play ? level ?
-    sprite3_insert(&cursor, data_units_16x16_spr, 0,1024,1);
+    sprite3_load(&cursor, data_units_16x16_spr, 0,1024,1);
     cursor.fr = fr_unit_cursor;
     for (int i=0;i<4;i++) {
         player_type[i]=player_notused;
         player_avatar[i]=i;
     }
-    sprite3_insert(&face,data_faces_26x26_spr,0,-6,0);
+    sprite3_load(&face,data_faces_26x26_spr,0,-6,0);
 }
 
 #define MAP_HEADER_SZ 8
@@ -186,7 +186,7 @@ void Game::get_possible_targets(Unit &attacking)
 void Game::harvest()
 {
     object spr;
-    sprite3_insert(&spr,data_misc_16x16_spr,0,0,5);
+    sprite3_load(&spr,data_misc_16x16_spr,0,0,5);
     for (int i=0;i<MAX_UNITS;i++) {
         Unit &u = units[i];
         // for all my units

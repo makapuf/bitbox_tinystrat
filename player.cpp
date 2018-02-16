@@ -60,8 +60,8 @@ int cursor_position (void)
 unsigned int menu(int menu_id, int nb_choices)
 {
     object menu, bullet;
-    sprite3_insert(&menu  , data_menus_88x82_spr,MENU_X*16,MENU_Y*16,  1);
-    sprite3_insert(&bullet, data_units_16x16_spr,MENU_X*16,MENU_Y*16+8,0);
+    sprite3_load(&menu  , data_menus_88x82_spr,MENU_X*16,MENU_Y*16,  1);
+    sprite3_load(&bullet, data_units_16x16_spr,MENU_X*16,MENU_Y*16+8,0);
 
     // unroll menu ?
     menu.fr = menu_id;

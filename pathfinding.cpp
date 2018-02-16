@@ -72,7 +72,7 @@ static struct Cell frontier_pop ( void )
 // ----------------------------------------------------------------
 // - main update
 
-static void try_neighbour(uint8_t npos, uint16_t from, const int max_cost, const int unit_type)
+static void try_neighbour(uint16_t npos, uint16_t from, const int max_cost, const int unit_type)
 {
 	uint8_t new_cost = cost_array[from].cost + terrain_move_cost[unit_type][tile_terrain[game_info.vram[npos]]];
 	if (new_cost>MAX_COST) new_cost=MAX_COST;

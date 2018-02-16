@@ -94,7 +94,7 @@ void intro()
     wait_vsync(15); // little pause
 
     object bg;
-    sprite3_insert(&bg, data_intro_bg_spr, 0,0,200);
+    sprite3_load(&bg, data_intro_bg_spr, 0,0,200);
 
     #define BGPAL 64 // couples
     // replace with ram palette
@@ -113,16 +113,16 @@ void intro()
     // fixme enter left/right ...
     object horse_l, horse_r, obj_l, obj_r, tiny, wars;
 
-    sprite3_insert(&horse_l, data_intro_horse_left_spr, 0,     50,10);
+    sprite3_load(&horse_l, data_intro_horse_left_spr, 0,     50,10);
     wait_vsync(15);
-    sprite3_insert(&horse_r,data_intro_horse_right_spr, 330,  50,10);
+    sprite3_load(&horse_r,data_intro_horse_right_spr, 330,  50,10);
     wait_vsync(15);
-    sprite3_insert(&obj_l, data_intro_objects_left_spr,    0,  30,7);
+    sprite3_load(&obj_l, data_intro_objects_left_spr,    0,  30,7);
     wait_vsync(15);
-    sprite3_insert(&obj_r,data_intro_objects_right_spr, 330,  30,7);
+    sprite3_load(&obj_r,data_intro_objects_right_spr, 330,  30,7);
     wait_vsync(15);
 
-    sprite3_insert(&tiny, data_intro_tiny_spr, -16,140,10);
+    sprite3_load(&tiny, data_intro_tiny_spr, -16,140,10);
     wait_vsync(30);
     for (int i=0;i<50;i++) {
         tiny.x += 4;
@@ -130,7 +130,7 @@ void intro()
     }
     wait_vsync(40);
 
-    sprite3_insert(&wars,data_intro_wars_spr, 20,-200,10);
+    sprite3_load(&wars,data_intro_wars_spr, 20,-200,10);
     while (!GAMEPAD_PRESSED(0,start)) {
         if (wars.y<140)
             wars.y+=16;
@@ -169,7 +169,7 @@ int main_menu()
     wait_vsync(15); // little pause
 
     object bg;
-    sprite3_insert(&bg, data_main_menu_spr, 0,0,200);
+    sprite3_load(&bg, data_main_menu_spr, 0,0,200);
 
     // replace with ram palette
     uint16_t *src_pal = (uint16_t*) bg.b; // in rom

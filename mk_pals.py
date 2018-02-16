@@ -49,4 +49,4 @@ of = open('palettes.bin','wb')
 for p in newpal :
 	for c in p :
 		u16 = rgba2u16(*c)
-		of.write(chr(u16&0xff)+chr(u16>>8))
+		of.write(bytes([u16&0xff, u16>>8]))
