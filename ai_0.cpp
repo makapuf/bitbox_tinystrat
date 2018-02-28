@@ -50,7 +50,7 @@ void play_CPU0 ()
 			        reconstruct_path(dest, path);
 			        if (*path=='!') continue; // error, cannot move there
 			        u.moveto(path);
-			        wait_vsync(20);
+			        for (int i=0;i<20;i++) wait_vsync();
 					combat(u,tgt);
 					// done for this unit
 					goto end_unit_turn;

@@ -60,8 +60,11 @@ int cursor_position (void)
 unsigned int menu(int menu_id, int nb_choices)
 {
     object menu, bullet;
-    sprite3_load(&menu  , data_menus_88x82_spr,MENU_X*16,MENU_Y*16,  1);
-    sprite3_load(&bullet, data_units_16x16_spr,MENU_X*16,MENU_Y*16+8,0);
+    sprite3_load(&menu  , SPRITE(menus_88x82));
+    sprite3_load(&bullet, SPRITE(units_16x16));
+
+    blitter_insert(&bullet, MENU_X*16,MENU_Y*16+8,0);
+    blitter_insert(&menu,   MENU_X*16,MENU_Y*16,  1);
 
     // unroll menu ?
     menu.fr = menu_id;
@@ -97,7 +100,7 @@ unsigned int menu(int menu_id, int nb_choices)
 
         bullet.fr = bullet_animation[(vga_frame/16)%4];
         bullet.y  =  MENU_Y*16+8+choice*16;
-        wait_vsync(1);
+        wait_vsync();
     }
 
     blitter_remove(&bullet);
@@ -116,7 +119,7 @@ Unit* select_unit( void )
             pressed  = gamepad_pressed();
             move_cursor(pressed);
             update_cursor_info();
-            wait_vsync(1);
+            wait_vsync();
         } while( !(pressed & gamepad_A) );
 
         play_sfx(sfx_select);
@@ -155,7 +158,7 @@ int select_destination( Unit * selected )
             pressed = gamepad_pressed();
             move_cursor(pressed);
             update_cursor_info();
-            wait_vsync(1);
+            wait_vsync();
 
             if (pressed & gamepad_A) break;
             if (pressed & gamepad_B) break;
@@ -223,7 +226,7 @@ Unit * select_attack_target()
         game_info.cursor.fr = fr_unit_cursor + ((vga_frame/16)%2 ? 1 : 0);
         // update hud for targets
 
-        wait_vsync(1);
+        wait_vsync();
         if (pressed & gamepad_A) {
             play_sfx(sfx_select);
             return game_info.targets[choice];

@@ -5,6 +5,8 @@ extern "C" {
 #include "sdk/lib/blitter/blitter.h" // object
 }
 
+#define SPRITE(x) (&_binary_sprites_##x##_spr_start)
+
 #define MAX_UNITS 32 // total max number of units on screen
 
 #define SCREEN_W 25

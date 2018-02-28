@@ -11,7 +11,7 @@ SPRITES := units_16x16 misc_16x16 faces_26x26 fight_200x200 bignum_16x24 \
 	next_player menus_88x82 main_menu \
 	$(TERRAINS:%=bg_%) $(INTRO:%=intro_%)
 
-DATAFILES := tiles_bg.tset map.map palettes.bin music/song.mod \
+GAME_BINARY_FILES := tiles_bg.tset map.map palettes.bin music/song.mod \
 	$(SPRITES:%=sprites/%.spr)
 
 GAME_C_FILES = main.cpp pathfinding.cpp player.cpp game.cpp grid.cpp ai_0.cpp combat.cpp unit.cpp\
@@ -29,10 +29,6 @@ GRSCRIPTS = sdk/lib/blitter/scripts
 main.cpp: data.h defs.h
 
 -include sdk/kernel/bitbox.mk
-
-data.h: $(DATAFILES)
-	mkdir -p $(@D)
-	sdk/lib/resources/embed.py $^ > $@
 
 %.h %.tset : %.tsx %.png
 	$(GRSCRIPTS)/mk_tset.py $< > $*.h

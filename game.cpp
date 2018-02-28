@@ -35,7 +35,8 @@ Unit *Game::unit_new (uint8_t x, uint8_t y, uint8_t type, uint8_t player_id )
 
     // allocate sprite
     Unit *u = &units[uid];
-    sprite3_load(u, data_units_16x16_spr, x*16, y*16, 5 ); // put below cursors
+    sprite3_load(u, SPRITE(units_16x16));
+    blitter_insert(u, x*16, y*16, 5 ); // put below cursors
     u->line = Unit::graph_line; // replace with unit drawing
     u->frame = 0; // do not change line draw - no clip
 
@@ -81,16 +82,18 @@ void Game::ready_animation()
 
     object next_spr;
 
-    sprite3_load(&next_spr, data_next_player_spr,-60,130,1);
+    sprite3_load(&next_spr, SPRITE(next_player));
+    blitter_insert(&next_spr,-60,130,1);
     for (int t=-80;t<80;t++) {
         next_spr.x = (VGA_H_PIXELS-next_spr.w)/2+t*t*t/2048;
         face.x=next_spr.x+2;
-        wait_vsync(1);
+        wait_vsync();
     }
     blitter_remove(&next_spr);
     draw_hud();
 
-    wait_vsync(60);
+    for (int i=0;i<60;i++)
+        wait_vsync();
     mod_jumpto(songorder_song);
 }
 
@@ -100,26 +103,29 @@ void Game::leave_level()
     // release player sprite
 }
 
-// global game element init - fixme make that a constructr ? would need dyn memory
 void Game::init()
 {
-    tilemap_insert (&map,
-        &data_tiles_bg_tset[4], // no palette
+    tilemap_init (&map,
+        &_binary_tiles_bg_tset_start + 4, // no palette
         0,0,
         TMAP_HEADER(SCREEN_W,SCREEN_H,TSET_16,TMAP_U16),
         vram
     );
 
-    // for game only, not intro
+    blitter_insert(&map,0,0,100);
 
     // init play ? level ?
-    sprite3_load(&cursor, data_units_16x16_spr, 0,1024,1);
+    sprite3_load(&cursor, SPRITE(units_16x16));
+    blitter_insert(&cursor, 0,1024,1);
     cursor.fr = fr_unit_cursor;
+
     for (int i=0;i<4;i++) {
         player_type[i]=player_notused;
         player_avatar[i]=i;
     }
-    sprite3_load(&face,data_faces_26x26_spr,0,-6,0);
+
+    sprite3_load(&face, SPRITE(faces_26x26));
+    blitter_insert(&face,0,-6,0);
 }
 
 #define MAP_HEADER_SZ 8
@@ -127,7 +133,7 @@ void Game::init()
 void Game::load_map() {
     memcpy(
         vram,
-        &data_map_map[MAP_HEADER_SZ+sizeof(vram)*level],
+        &_binary_map_map_start + (MAP_HEADER_SZ+sizeof(vram)*level),
         sizeof(vram)
     );
 }
@@ -153,7 +159,7 @@ void Game::start_level(int _level)
 {
     level=_level;
 
-    load_mod(data_song_mod);
+    load_mod(&_binary_music_song_mod_start);
     load_map();
     load_units();
     finished_game = false;
@@ -186,7 +192,8 @@ void Game::get_possible_targets(Unit &attacking)
 void Game::harvest()
 {
     object spr;
-    sprite3_load(&spr,data_misc_16x16_spr,0,0,5);
+    sprite3_load(&spr,SPRITE(misc_16x16));
+    blitter_insert(&spr,0,0,5);
     for (int i=0;i<MAX_UNITS;i++) {
         Unit &u = units[i];
         // for all my units
@@ -211,7 +218,7 @@ void Game::harvest()
                     for (int i=0;i<32;i++){
                         spr.x += (tgt_x - spr.x)/(32-i);
                         spr.y += (tgt_y - spr.y)/(32-i);
-                        wait_vsync(1);
+                        wait_vsync();
                     }
                     // update stat
                     resources [current_player][res]++;

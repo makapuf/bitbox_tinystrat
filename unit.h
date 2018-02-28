@@ -17,8 +17,8 @@ struct Unit : public object
     int  type () const { return fr/8; }
     void type (int typeunit_id) { fr = typeunit_id*8; };
 
-    void palette (int palette) { b = (uintptr_t)&data_palettes_bin[1024*palette]; }
-    int  palette () const { return (b - (uintptr_t) data_palettes_bin ) / 1024; }
+    void palette (int palette) { b = (uintptr_t)&_binary_palettes_bin_start + 1024*palette; }
+    int  palette () const { return (b - (uintptr_t) &_binary_palettes_bin_start ) / 1024; }
 
     void    health(uint8_t health) { c = health; }
     uint8_t health() { return c; }
@@ -97,7 +97,7 @@ struct Unit : public object
                     default : message ("unknown character : %c\n",*path); break;
                 }
                 fr += (vga_frame/16)%2;
-                wait_vsync(1);
+                wait_vsync();
             }
         }
         // reset to rest frame

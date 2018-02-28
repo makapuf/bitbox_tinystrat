@@ -91,52 +91,66 @@ uint16_t gamepad_pressed(void)
 
 void intro()
 {
-    wait_vsync(15); // little pause
+    for (int i=0;i<15;i++)
+        wait_vsync(); // little pause
 
     object bg;
-    sprite3_load(&bg, data_intro_bg_spr, 0,0,200);
+    object horse_l, horse_r, obj_l, obj_r, tiny, wars;
+
+    sprite3_load(&bg, SPRITE(intro_bg));
+    sprite3_load(&horse_l, SPRITE(intro_horse_left));
+    sprite3_load(&horse_r, SPRITE(intro_horse_right));
+    sprite3_load(&obj_l,   SPRITE(intro_objects_left));
+    sprite3_load(&obj_r,   SPRITE(intro_objects_right));
+    sprite3_load(&tiny,    SPRITE(intro_tiny));
+    sprite3_load(&wars,    SPRITE(intro_wars));
 
     #define BGPAL 64 // couples
     // replace with ram palette
     uint16_t *src_pal = (uint16_t*) bg.b; // in rom
     bg.b = (uintptr_t) ram_palette;
-
+    blitter_insert(&bg, 0,0,200);
 
     // fade-in palette
     for (int i=0;i<255;i+=3) {
         palette_fade(BGPAL, &bg, src_pal, i);
-        wait_vsync(1);
+        wait_vsync();
     }
 
-    wait_vsync(15);
+    for (int i=0;i<15;i++)
+        wait_vsync();
 
-    // fixme enter left/right ...
-    object horse_l, horse_r, obj_l, obj_r, tiny, wars;
+    blitter_insert(&horse_l, 0,     50,10);
+    for (int i=0;i<15;i++)
+        wait_vsync();
+    blitter_insert(&horse_r, 330,  50,10);
+    for (int i=0;i<15;i++)
+        wait_vsync();
+    blitter_insert(&obj_l,  0,  30,7);
+    for (int i=0;i<15;i++)
+        wait_vsync();
+    blitter_insert(&obj_r,330,  30,7);
+    for (int i=0;i<15;i++)
+        wait_vsync();
 
-    sprite3_load(&horse_l, data_intro_horse_left_spr, 0,     50,10);
-    wait_vsync(15);
-    sprite3_load(&horse_r,data_intro_horse_right_spr, 330,  50,10);
-    wait_vsync(15);
-    sprite3_load(&obj_l, data_intro_objects_left_spr,    0,  30,7);
-    wait_vsync(15);
-    sprite3_load(&obj_r,data_intro_objects_right_spr, 330,  30,7);
-    wait_vsync(15);
-
-    sprite3_load(&tiny, data_intro_tiny_spr, -16,140,10);
-    wait_vsync(30);
+    blitter_insert(&tiny, -16,140,10);
+    for (int i=0;i<30;i++)
+        wait_vsync();
     for (int i=0;i<50;i++) {
         tiny.x += 4;
-        wait_vsync(1);
+        wait_vsync();
     }
-    wait_vsync(40);
 
-    sprite3_load(&wars,data_intro_wars_spr, 20,-200,10);
+    for (int i=0;i<40;i++)
+        wait_vsync();
+
+    blitter_insert(&wars, 20,-200,10);
     while (!GAMEPAD_PRESSED(0,start)) {
         if (wars.y<140)
             wars.y+=16;
         else
             wars.y = 166+sinus(vga_frame)/32;
-        wait_vsync(1);
+        wait_vsync();
     }
 
     // fade out bg & remove
@@ -147,7 +161,7 @@ void intro()
         // horse_l->x -= 16;
         // horse_r->x += 16;
         palette_fade(BGPAL, &bg, src_pal, 255-i);
-        wait_vsync(1);
+        wait_vsync();
     }
 
     blitter_remove(&bg);
@@ -166,29 +180,30 @@ void intro()
 // main_menu : new game, about, ...
 int main_menu()
 {
-    wait_vsync(15); // little pause
+    for (int i=0;i<15;i++)
+        wait_vsync(); // little pause
 
     object bg;
-    sprite3_load(&bg, data_main_menu_spr, 0,0,200);
+    sprite3_load(&bg, SPRITE(main_menu));
 
     // replace with ram palette
     uint16_t *src_pal = (uint16_t*) bg.b; // in rom
     bg.b = (uintptr_t) ram_palette;
 
+    blitter_insert(&bg, 0,0,200);
     // fade-in palette
     for (int i=0;i<255;i+=3) {
         palette_fade(255, &bg, src_pal, i);
-        wait_vsync(1);
+        wait_vsync();
     }
 
     // wait keypress
     while (!GAMEPAD_PRESSED(0,start));
 
-
     // fade-out palette
     for (int i=0;i<255;i+=4) {
         palette_fade(255, &bg, src_pal, 255-i);
-        wait_vsync(1);
+        wait_vsync();
     }
 
     blitter_remove(&bg);

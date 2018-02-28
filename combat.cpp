@@ -25,18 +25,19 @@ static void fight_animation( void )
 {
     // wait keypress
     object fight_spr;
-    sprite3_load(&fight_spr, data_fight_200x200_spr,100,70,3);
+    sprite3_load(&fight_spr, SPRITE(fight_200x200));
+    blitter_insert(&fight_spr,100,70,3);
     static const uint8_t fight_anim[8] = {0,1,2,1,3,0,2,1};
     for (int i=0;i<60;i++) {
         fight_spr.fr = fight_anim[(vga_frame/16)%8];
-        wait_vsync(1);
+        wait_vsync();
     }
     blitter_remove(&fight_spr);
 }
 
 static void sprite_set_palette(object *o, int palette)
 {
-    o->b = (uintptr_t)&data_palettes_bin[1024*palette];
+    o->b = (uintptr_t)&_binary_palettes_bin_start + 1024*palette;
 }
 
 // fixme use it !
@@ -46,20 +47,25 @@ struct Opponent {
     Opponent(bool left, Unit &unit)
     {
         const uint8_t terrain = unit.terrain();
-        const uint8_t player = unit.player();
+        const uint8_t player  = unit.player();
 
-        sprite3_load(&bg,terrain_bg_table[terrain],left ? 0 : 200, left?-200:300,35);
-        sprite3_load(&sprite, data_units_16x16_spr, left ? -30 : 410, 180, 5 );
+        sprite3_load(&bg,terrain_bg_table[terrain]);
+        sprite3_load(&sprite, SPRITE(units_16x16));
+
+        blitter_insert(&bg,     left ? 0   : 200, left?-200:300,35);
+        blitter_insert(&sprite, left ? -30 : 410, 180, 5 );
         // also other units ...
         sprite.d |= 1; // set render 2X
         sprite.h *= 2;
         sprite.fr = unit.type()*8 + (left ? 0 : 2); // facing left
         sprite_set_palette(&sprite, player);
 
-        sprite3_load(&life, data_bignum_16x24_spr, left ? 34 : 340,52,5);
+        sprite3_load(&life, SPRITE(bignum_16x24));
+        blitter_insert(&life, left ? 34 : 340,52,5);
         life.fr = unit.health();
 
-        sprite3_load(&face,data_faces_26x26_spr,left ? 0:360,52,5);
+        sprite3_load(&face,SPRITE(faces_26x26));
+        blitter_insert(&face,left ? 0:360,52,5);
         face.fr = game_info.face_frame(player, face_idle);
         face.h  = 26;
     }
@@ -94,17 +100,17 @@ void combat (Unit &attacking, Unit &attacked)
     for (int i=0;i<25;i++) {
         op_att.bg.y+=10;
         op_def.bg.y-=10;
-        wait_vsync(1);
+        wait_vsync();
     }
     for (int i=0;i<80;i++) {
         op_att.sprite.x+=2;
         op_att.sprite.fr = (op_att.sprite.fr&~7)   + (vga_frame/8)%2;
-        wait_vsync(1);
+        wait_vsync();
     }
     for (int i=0;i<80;i++) {
         op_def.sprite.fr  = (op_def.sprite.fr&~7) + 2 + (vga_frame/8)%2;
         op_def.sprite.x-=2;
-        wait_vsync(1);
+        wait_vsync();
     }
 
     fight_animation();
@@ -136,7 +142,7 @@ void combat (Unit &attacking, Unit &attacked)
         combat_face_frame(&op_att.face,anim_id,0);
         op_def.life.x +=2;
         combat_face_frame(&op_def.face,anim_id,1);
-        wait_vsync(1);
+        wait_vsync();
     }
 
     op_att.life.fr = attacking.health();
@@ -150,7 +156,7 @@ void combat (Unit &attacking, Unit &attacked)
         op_def.life.x-=2;
         combat_face_frame(&op_att.face,anim_id,0);
         combat_face_frame(&op_def.face,anim_id,1);
-        wait_vsync(1);
+        wait_vsync();
     }
 
     // wait for keypress
@@ -159,14 +165,14 @@ void combat (Unit &attacking, Unit &attacked)
         if (pressed && gamepad_A) break;
         combat_face_frame(&op_att.face,anim_id,0);
         combat_face_frame(&op_def.face,anim_id,1);
-        wait_vsync(1);
+        wait_vsync();
     }
 
     // outro - quicker
     while (op_att.bg.y > -150 ) {
         op_att.bg.y-=16;
         op_def.bg.y+=16;
-        wait_vsync(1);
+        wait_vsync();
     }
 
     // show all units again

@@ -18,11 +18,8 @@ extern Game game_info;
 
 Grid::Grid(void)
 {
-	o.x = 0;
-	o.y = 16;
 	o.w = SCREEN_W*16;
 	o.h = SCREEN_H*16;
-	o.z = 50;
 
 	o.data = data;
 	o.frame = 0; // check grid empty & skip lines ? line by line ?
@@ -30,7 +27,7 @@ Grid::Grid(void)
 
 	o.a = GRID_COLOR; // mode, used as color for now
 
-	blitter_insert(&o);
+	blitter_insert(&o,0,16,50);
 
 	clear();
 }

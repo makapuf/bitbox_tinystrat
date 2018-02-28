@@ -78,6 +78,7 @@ resources_terrains = [
 # Headers
 # ---------------------------------
 print('#include <stdint.h>')
+print('#include "data.h"')
 print('#ifndef DEFS_DEFINITION')
 print('#define DEFS_DEFINITION')
 
@@ -192,7 +193,7 @@ print('};')
 # terrain backgrounds
 print("const char *terrain_bg_table[] = {")
 for t in terrains :
-	print("    [terrain_%s] = &data_bg_%s_spr[0],"%(t,t))
+	print("    [terrain_%s] = &_binary_sprites_bg_%s_spr_start,"%(t,t))
 print("};")
 
 # terrain/unit movement cost
