@@ -37,7 +37,7 @@ static void fight_animation( void )
 
 static void sprite_set_palette(object *o, int palette)
 {
-    o->b = (uintptr_t)&_binary_palettes_bin_start + 1024*palette;
+    o->b = (uintptr_t)&data_palettes_bin [ 1024*palette ];
 }
 
 // fixme use it !

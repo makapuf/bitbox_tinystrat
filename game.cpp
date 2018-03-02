@@ -106,7 +106,7 @@ void Game::leave_level()
 void Game::init()
 {
     tilemap_init (&map,
-        &_binary_tiles_bg_tset_start + 4, // no palette
+        &data_tiles_bg[ 4 ], // no palette
         0,0,
         TMAP_HEADER(SCREEN_W,SCREEN_H,TSET_16,TMAP_U16),
         vram
@@ -133,7 +133,7 @@ void Game::init()
 void Game::load_map() {
     memcpy(
         vram,
-        &_binary_map_map_start + (MAP_HEADER_SZ+sizeof(vram)*level),
+        &data_map [ MAP_HEADER_SZ+sizeof(vram)*level ],
         sizeof(vram)
     );
 }
@@ -159,7 +159,7 @@ void Game::start_level(int _level)
 {
     level=_level;
 
-    load_mod(&_binary_music_song_mod_start);
+    load_mod(&data_song_mod);
     load_map();
     load_units();
     finished_game = false;
