@@ -47,13 +47,17 @@ struct Game {
 	void start_level(int level);
 	void leave_level();
     void load_map();
-    void load_units();
+    void load_units(); // also declares which player is what
 
 	void get_possible_targets(Unit &attacking);
 
 	int face_frame(int player, enum Face_State st) { return player_avatar[player]*face_NB+st; }
 	void ready_animation();
 	void draw_hud();
+
+    // gets next unit of mine starting from this one, or first if 'from' is null
+    // returns nullptr if none found
+    Unit *myunits ( Unit *from );
 };
 
 extern Game game_info;

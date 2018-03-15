@@ -127,11 +127,12 @@ struct Unit : public object
         sprite3_cpl_line_noclip(o);
 
         // overdraw life as object->c
-        const int y=vga_line-o->y;
-        if (y >= 16-(int)o->c ) {
-            draw_buffer[o->x+1]=RGB(y*20-100,305-y*20,0);
-        }
-        // fixme color green -> yellow -> red pixel colors gradient , not same
+        const int y = vga_line-o->y;
+        const pixel_t color = RGB((10-o->c)*20,o->c*20+50,30);
+
+        if (y==14)
+            for (unsigned int i=0;i<o->c;i++)
+                draw_buffer[o->x+3+i]=color;
     }
 };
 

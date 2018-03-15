@@ -57,7 +57,7 @@ void load_map (int map_id); // (re) load map background
 uint16_t gamepad_pressed(void);
 
 void human_game_turn(void);
-void play_CPU0 (void);
+void play_CPU (void);
 
 // -- path finding structures and functions
 

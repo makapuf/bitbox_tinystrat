@@ -229,7 +229,7 @@ extern "C" {
             game_info.ready_animation();
             switch (game_info.player_type[game_info.current_player]) {
                 case player_human : human_game_turn(); break;
-                case player_cpu0  : play_CPU0(); break;
+                case player_cpu0  : play_CPU(); break;
                 case player_notused : break;
                 case player_off : break;
             }

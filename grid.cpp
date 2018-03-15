@@ -82,11 +82,8 @@ void Grid::color_movement_range(void)
 void Grid::color_units(void)
 {
 	clear();
-	for (int i=0;i<MAX_UNITS;i++) {
-        Unit &u = game_info.units[i];
-
-		if (!!u && u.player() == game_info.current_player)
-			data[u.y/16-1] |= 1<<(u.x/16);
+	for ( Unit *u = game_info.myunits(0) ; u ; u=game_info.myunits(u) ) {
+		data[u->y/16-1] |= 1<<(u->x/16);
 	}
 }
 
