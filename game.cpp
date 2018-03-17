@@ -87,13 +87,16 @@ void Game::ready_animation()
     for (int t=-80;t<80;t++) {
         next_spr.x = (VGA_H_PIXELS-next_spr.w)/2+t*t*t/2048;
         face.x=next_spr.x+2;
+        game_info.bg_frame();
         wait_vsync();
     }
     blitter_remove(&next_spr);
     draw_hud();
 
-    for (int i=0;i<60;i++)
+    for (int i=0;i<60;i++) {
+        game_info.bg_frame();
         wait_vsync();
+    }
     mod_jumpto(songorder_song);
 }
 
@@ -150,7 +153,8 @@ void Game::load_units()
             // special : flag
         } else {
             unit_new(unit[0],unit[1],unit[2]-1,unit[3]);
-            player_type[unit[3]] = player_cpu0; // unit[3]==0 ? player_human : player_cpu0;
+            // player_type[unit[3]] = unit[3]==0 ? player_human : player_cpu0;
+            player_type[unit[3]] = player_cpu0;
         }
     }
 }
@@ -200,6 +204,7 @@ void Game::harvest()
         if (!u || u.player()!=current_player)
             continue;
 
+        // fixme use can_harvest
         if ( u.type() == unit_farmer || u.type() == unit_farmer_f ) {
             // find resource for terrain
             for (int res=0;res<4;res++) {
@@ -258,4 +263,35 @@ Unit *Game::myunits ( Unit *from )
             return u;
     }
     return nullptr;
+}
+
+
+// search for an animated frame -> to function returning next or zero
+static uint8_t find_next_anim_tile(uint8_t tile_id)
+{
+    for (int anim=0;anim<NB_TILES_ANIMATIONS;anim++)
+        for (int frame=0;frame<4;frame++) {
+            if ( tile_id == anim_tiles[anim][frame] ) {
+                if (frame==3 || anim_tiles[anim][frame+1]==0) {
+                    return anim_tiles[anim][0];
+                } else {
+                    return anim_tiles[anim][frame+1];
+                }
+            }
+        }
+    return 0;
+}
+
+// update background animations & wait next frame
+void Game::bg_frame()
+{
+    // update one line per frame
+    const int line = vga_frame%32;
+    if (line==0 || line>=SCREEN_H) return;
+
+    for (int i = SCREEN_W*line ; i < SCREEN_W*(line+1) ; i++)
+    {
+        uint8_t next=find_next_anim_tile(vram[i]);
+        if (next) vram[i] = next;
+    }
 }

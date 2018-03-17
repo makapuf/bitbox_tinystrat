@@ -41,12 +41,16 @@ void find_next_best_dummy(int &npos, Unit * &nunit)
 	}
 }
 
-
 // best action by heuristic
+// updates target, pos
 void find_next_best(Unit &u, int &npos, Unit * &target)
 {
-	int best_score=-1; // best score so far
-	int original_pos = u.position();
+	int original_pos = u.position(); // save position
+
+	// by default stay here
+	int best_score = u.can_harvest()<0 ? 0 : 10;
+	npos = original_pos;
+	target = nullptr;
 
 	// foreach possible move destination
 	for (int dest=SCREEN_W;dest<SCREEN_H*SCREEN_W;dest++) {
@@ -56,16 +60,9 @@ void find_next_best(Unit &u, int &npos, Unit * &target)
 			continue; // not free
 
 		// "move" it to new destination - should not be visible
-		u.position(dest)
+		u.position(dest);
 
-		const int harvest_score = 0; // harvesting position
-
-        if ( u.type() == unit_farmer || u.type() == unit_farmer_f && ) {
-            // find resource for terrain
-            for (int res=0;res<4;res++)
-                if (resource_terrain[res]==tile_terrain[game_info.vram[dest]]) // terrain on destination
-                	harvest_score = 10;
-        }
+		const int harvest_score = u.can_harvest()<0 ? 0 : 10;
 
 		const int proxymity_score = 0; // closer to my own units
 		const int target_proximity_score = 0; // closer to castle
@@ -76,6 +73,13 @@ void find_next_best(Unit &u, int &npos, Unit * &target)
 
 		// try doing nothing
 		if ( score > best_score ) {
+			message (
+				"best so far : harvest %d, proxymity %d, target %d \n",
+				harvest_score,
+				proxymity_score,
+				target_proximity_score
+				);
+
 			best_score=score;
 			npos=dest;
 			target=nullptr;
@@ -130,7 +134,7 @@ void play_CPU ()
 		int next_pos=0; // target position found by AI
 		Unit *target;   // target attack found by AI (or null if pause here).
 
-		find_next_best_dummy(next_pos, target);
+		find_next_best(*u, next_pos, target);
 
 		// go there
 		reconstruct_path(next_pos, path);

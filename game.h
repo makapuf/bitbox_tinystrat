@@ -55,6 +55,8 @@ struct Game {
 	void ready_animation();
 	void draw_hud();
 
+    void bg_frame();
+
     // gets next unit of mine starting from this one, or first if 'from' is null
     // returns nullptr if none found
     Unit *myunits ( Unit *from );

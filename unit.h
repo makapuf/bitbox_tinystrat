@@ -40,6 +40,9 @@ struct Unit : public object
     // get the terrain type of this position
     uint8_t terrain() const;
 
+    // return resource type if can harvest, -1 if not
+    int can_harvest() const;
+
     bool can_attack(const Unit &attacked) const
     {
         const int dist = mdistance(attacked);
@@ -83,26 +86,8 @@ struct Unit : public object
         return damage;
     }
 
-    void moveto(const char *path)
-    {
-        // animate move to dest
-        for (;*path;path++) {
-            for (int i=0;i<16;i++){
-                fr &= ~7;
-                switch(*path) {
-                    case 'N' : y-=1; fr+=6; break;
-                    case 'S' : y+=1; fr+=4; break;
-                    case 'E' : x+=1; fr+=0; break;
-                    case 'W' : x-=1; fr+=2; break;
-                    default : message ("unknown character : %c\n",*path); break;
-                }
-                fr += (vga_frame/16)%2;
-                wait_vsync();
-            }
-        }
-        // reset to rest frame
-        fr &= ~7;
-    }
+    // move unit animation
+    void moveto(const char *path);
 
     // return damage given
     uint8_t do_attack(Unit &attacked)

@@ -216,7 +216,7 @@ extern "C" {
     {
 
         //intro();
-        //main_menu();
+        main_menu();
 
         // fixme select game level, parameters ...
 

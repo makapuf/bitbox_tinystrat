@@ -40,7 +40,6 @@ static void sprite_set_palette(object *o, int palette)
     o->b = (uintptr_t)&data_palettes_bin [ 1024*palette ];
 }
 
-// fixme use it !
 struct Opponent {
     object bg, sprite, life, face;
 
@@ -53,7 +52,7 @@ struct Opponent {
         sprite3_load(&sprite, SPRITE(units_16x16));
 
         blitter_insert(&bg,     left ? 0   : 200, left?-200:300,35);
-        blitter_insert(&sprite, left ? -30 : 410, 180, 5 );
+        blitter_insert(&sprite, left ? -30 : 240, 180, 5 );
         // also other units ...
         sprite.d |= 1; // set render 2X
         sprite.h *= 2;
@@ -95,7 +94,6 @@ void combat (Unit &attacking, Unit &attacked)
     Opponent op_att (true, attacking);
     Opponent op_def (false, attacked);
 
-
     // intro
     for (int i=0;i<25;i++) {
         op_att.bg.y+=10;
@@ -105,11 +103,6 @@ void combat (Unit &attacking, Unit &attacked)
     for (int i=0;i<80;i++) {
         op_att.sprite.x+=2;
         op_att.sprite.fr = (op_att.sprite.fr&~7)   + (vga_frame/8)%2;
-        wait_vsync();
-    }
-    for (int i=0;i<80;i++) {
-        op_def.sprite.fr  = (op_def.sprite.fr&~7) + 2 + (vga_frame/8)%2;
-        op_def.sprite.x-=2;
         wait_vsync();
     }
 

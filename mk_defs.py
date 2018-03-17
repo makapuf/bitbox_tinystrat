@@ -75,6 +75,13 @@ resources_terrains = [
     ('stone','mountains'),
 ]
 
+anim_tiles = [
+	[int(fr.get('tileid'))+1 for fr in elt.findall('frame')]
+	for elt in tsx.findall('tile/animation')
+] # no need to keep original tile
+
+# === EXPORT ================================================================
+
 # Headers
 # ---------------------------------
 print('#include <stdint.h>')
@@ -143,6 +150,7 @@ for t in ('wood','zero','P1','mark'):
 # menus
 for i,m in enumerate(menus) :
 	print("#define MENU_%s %d"%(m.upper(),i))
+print ('#define NB_TILES_ANIMATIONS ',len(anim_tiles));
 
 print('extern const uint8_t tile_terrain[];')
 print('extern const char * unit_names[];')
@@ -156,6 +164,7 @@ print('extern const uint8_t unit_movement_range_table[];')
 print('extern const uint8_t level_units[][32][4];')
 print('extern const char *terrain_bg_table[];')
 print('extern const uint8_t resource_terrain[];')
+print('extern const uint8_t anim_tiles[][4];');
 print('#endif\n')
 
 
@@ -222,11 +231,15 @@ for u in units :
 	print('    %d, // %s'%(r,u))
 print('};')
 
-
 print('const uint8_t resource_terrain[4]={ // per resource')
 for resource,terrain in resources_terrains :
 	print('    [resource_{0}]  = terrain_{1},'.format(resource,terrain))
 print('};')
+
+print('const uint8_t anim_tiles[][4] = { // animated tiles ref, anim refs, 0');
+for anim in anim_tiles :
+	print ('    {%s},'%','.join(str(i) for i in anim))
+print ('};')
 
 
 # map units

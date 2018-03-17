@@ -119,6 +119,7 @@ Unit* select_unit( void )
             pressed  = gamepad_pressed();
             move_cursor(pressed);
             update_cursor_info();
+            game_info.bg_frame();
             wait_vsync();
         } while( !(pressed & gamepad_A) );
 
