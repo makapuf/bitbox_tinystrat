@@ -101,6 +101,7 @@ void Game::leave_level()
 {
     // release all blitter sprites, set to zero
     // release player sprite
+    grid.hide();
 }
 
 void Game::init()
@@ -150,7 +151,8 @@ void Game::load_units()
             // special : flag
         } else {
             unit_new(unit[0],unit[1],unit[2]-1,unit[3]);
-            player_type[unit[3]] = player_cpu0; // unit[3]==0 ? player_human : player_cpu0;
+            //player_type[unit[3]] = player_cpu0;
+            player_type[unit[3]] = unit[3]==0 ? player_human : player_cpu0;
         }
     }
 }
@@ -162,6 +164,8 @@ void Game::start_level(int _level)
     load_mod(&data_song_mod);
     load_map();
     load_units(); // also sets player type
+    grid.show();
+
     finished_game = false;
 }
 
