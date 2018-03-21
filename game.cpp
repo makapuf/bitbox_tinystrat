@@ -104,6 +104,7 @@ void Game::leave_level()
 {
     // release all blitter sprites, set to zero
     // release player sprite
+    grid.hide();
 }
 
 void Game::init()
@@ -166,6 +167,8 @@ void Game::start_level(int _level)
     load_mod(&data_song_mod);
     load_map();
     load_units(); // also sets player type
+    grid.show();
+
     finished_game = false;
 }
 

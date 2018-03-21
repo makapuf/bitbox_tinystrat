@@ -18,22 +18,31 @@ extern Game game_info;
 
 Grid::Grid(void)
 {
-	o.w = SCREEN_W*16;
-	o.h = SCREEN_H*16;
+	w = SCREEN_W*16;
+	h = SCREEN_H*16;
 
-	o.data = data;
-	o.frame = 0; // check grid empty & skip lines ? line by line ?
-	o.line = grid_line;
+	data = &m_data;
+	frame = 0; // check grid empty & skip lines ? line by line ?
+	line = grid_line;
 
-	o.a = GRID_COLOR; // mode, used as color for now
-
-	blitter_insert(&o,0,16,50);
+	a = GRID_COLOR; // two colors
 
 	clear();
 }
 
+void Grid::show()
+{
+	blitter_insert(this,0,16,50);
+}
+
+void Grid::hide()
+{
+	blitter_remove(this);
+}
+
+
 void Grid::clear() {
-	for (int i=0;i<32;i++) data[i]=0;
+	for (int i=0;i<32;i++) m_data[i]=0;
 }
 
 extern "C" {
@@ -53,14 +62,17 @@ void Grid::grid_line (struct object *o)
 		if (data[y/16] & (1<<i)) {
 			uint16_t *firstpixel = &draw_buffer[o->x+i*16];
 
-			if (y%16==0 || y%16==15 ) {
+			// draw bottom only if none after
+			if (y%16==0 || ( y%16==15 && ! (data[y/16+1] & (1<<(i))))) {
 				for (int k=1;k<6;k++) {
 					*(firstpixel+k)=color;
 					*(firstpixel+15-k)=color;
 				}
 			} else if (y%16 != 7 && y%16!=8) {
 				*firstpixel=color;
-				*(firstpixel+15)=color;
+				// draw right only if none after
+				if (! (data[y/16] & (1<<(i+1))))
+					*(firstpixel+15)=color;
 			}
 		}
 	}
@@ -70,10 +82,10 @@ void Grid::grid_line (struct object *o)
 void Grid::color_movement_range(void)
 {
 	for (int y=0;y<SCREEN_H;y++) {
-		data[y]=0;
+		m_data[y]=0;
 		for (int x=0;x<SCREEN_W;x++)
 			if (!cell_isempty(cost_array[(y+1)*SCREEN_W+x])) // start line 1
-				data[y] |= 1<<x;
+				m_data[y] |= 1<<x;
 	}
 }
 
@@ -83,7 +95,7 @@ void Grid::color_units(void)
 {
 	clear();
 	for ( Unit *u = game_info.myunits(0) ; u ; u=game_info.myunits(u) ) {
-		data[u->y/16-1] |= 1<<(u->x/16);
+		m_data[u->y/16-1] |= 1<<(u->x/16);
 	}
 }
 
@@ -92,6 +104,6 @@ void Grid::color_targets(void)
 	clear();
 	for (int i=0;i<game_info.nbtargets;i++) {
         Unit *u = game_info.targets[i];
-		data[u->y/16-1] |= 1<<(u->x/16);
+		m_data[u->y/16-1] |= 1<<(u->x/16);
 	}
 }
