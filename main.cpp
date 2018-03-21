@@ -15,6 +15,7 @@ extern "C" {
 #include "game.h"
 #include "unit.h"
 #include "grid.h"
+#include "surface.h"
 
 #define SFX_CHANNEL (MOD_CHANNELS-1) // use last channel
 #define SFX_VOLUME 64
@@ -175,7 +176,13 @@ void intro()
     message("End of intro.\n");
 }
 
-
+char surface_data[SURFACE_BUFSZ(144,176)];
+pixel_t surface_pal[] = {
+    RGB(205,201,185),
+    RGB(92,86,77),
+    RGB(71,65,57),
+    RGB(46,38,33),
+};
 
 // main_menu : new game, about, ...
 int main_menu()
@@ -191,22 +198,30 @@ int main_menu()
     bg.b = (uintptr_t) ram_palette;
 
     blitter_insert(&bg, 0,0,200);
+
     // fade-in palette
-    for (int i=0;i<255;i+=3) {
+    for (int i=0;i<256;i+=4) {
         palette_fade(255, &bg, src_pal, i);
         wait_vsync();
     }
 
+    // menu
+    Surface surf { 144, 176, &surface_data };
+    surf.setpalette (surface_pal);
+    for (int i=0;i<3;i++)
+        surf.fillrect (10,10+40*i,100,30+40*i,i);
+    blitter_insert(&surf, 240,80,50);
     // wait keypress
     while (!GAMEPAD_PRESSED(0,start));
 
     // fade-out palette
-    for (int i=0;i<255;i+=4) {
+    for (int i=0;i<256;i+=4) {
         palette_fade(255, &bg, src_pal, 255-i);
         wait_vsync();
     }
 
     blitter_remove(&bg);
+    blitter_remove(&surf); // destructor ?
     return 0;
 }
 

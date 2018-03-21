@@ -15,6 +15,7 @@ BINARY_FILES := tiles_bg.tset map.map palettes.bin music/song.mod \
 	$(SPRITES:%=sprites/%.spr)
 
 GAME_C_FILES = main.cpp pathfinding.cpp player.cpp game.cpp grid.cpp ai.cpp combat.cpp unit.cpp\
+	surface.cpp \
 	implems.c \
 	sdk/lib/blitter/blitter.c \
 	sdk/lib/blitter/blitter_tmap.c \
