@@ -56,11 +56,11 @@ void find_next_best(Unit &u, int &npos, Unit * &target)
 			continue; // not free
 
 		// "move" it to new destination - should not be visible
-		u.position(dest)
+		u.position(dest);
 
-		const int harvest_score = 0; // harvesting position
+		int harvest_score = 0; // harvesting position
 
-        if ( u.type() == unit_farmer || u.type() == unit_farmer_f && ) {
+        if ( u.type() == unit_farmer || u.type() == unit_farmer_f ) {
             // find resource for terrain
             for (int res=0;res<4;res++)
                 if (resource_terrain[res]==tile_terrain[game_info.vram[dest]]) // terrain on destination

@@ -144,18 +144,27 @@ for t in ('wood','zero','P1','mark'):
 for i,m in enumerate(menus) :
 	print("#define MENU_%s %d"%(m.upper(),i))
 
+print('''struct LevelDef {
+	char *name;
+	char *intro;
+	uint8_t nb_players;
+	uint8_t units[32][4]; // initial position of units
+};''')
+
 print('extern const uint8_t tile_terrain[];')
-print('extern const char * unit_names[];')
 print('extern const char * terrain_names[];')
+
+print('extern const char * unit_names[];')
 print('extern const uint8_t unit_damage_table[][NB_UNITS];')
-print('extern const uint8_t terrain_defense[];')
-print('extern const uint8_t terrain_move_cost[][NB_TERRAINS];')
-print('extern const uint8_t terrain_move_cost[][NB_TERRAINS];')
 print('extern const uint8_t unit_attack_range_table[][2];')
 print('extern const uint8_t unit_movement_range_table[];')
-print('extern const uint8_t level_units[][32][4];')
+
+print('extern const uint8_t terrain_defense[];')
+print('extern const uint8_t terrain_move_cost[][NB_TERRAINS];')
 print('extern const char *terrain_bg_table[];')
 print('extern const uint8_t resource_terrain[];')
+
+print ('extern const struct LevelDef level_info[];')
 print('#endif\n')
 
 
@@ -236,27 +245,54 @@ tmx=ET.parse('map.tmx').getroot()
 units_ts = [x for x in tmx.findall('tileset[image]') if x.find('image').get('source')=="map_units.png"][0]
 firstgid_units = int(units_ts.get('firstgid'))
 tmap_w = int(tmx.get('width'))
-print('// ----')
-print('// Units initial positions by level')
-print("const uint8_t level_units[][32][4] = { // N levels, units, {x,y,type 1-16, color}")
+
+lvl_list = [] # list of dicts with level infos
+
 for l in tmx.findall('layer') :
-	if l.get('name').endswith('_units') and l.get('name').startswith('_level'):
-		dat = l.find('data')
-		assert dat.get('encoding')=='csv','not a csv file'
+	lvlname = l.get('name')
+	if lvlname.startswith('_'):
+		if lvlname.endswith('_units') :
+			lvl = lvl_list[-1] # preceding level
+			assert lvlname[1:-6] == lvl['name'], "%s level in map must be just over level %s, not %s"%(lvlname, lvlname[1:-6], lvl['name'])
 
-		lvl = [int(x) for x in dat.text.replace('\n','').split(',')]
-		items = [(n,t-firstgid_units) for n,t in enumerate(lvl) if t]
+			dat = l.find('data')
+			assert dat.get('encoding')=='csv','not a csv file'
 
-		print('    {')
-		for id,item in items :
-			color = item//16
-			unit  = item%16
-			if unit==15 : continue # flag : fixme special
-			x = id%tmap_w
-			y = id//tmap_w
-			print("        {%d,%d,unit_%s+1,color_%s},"%(x,y,units[unit],colors[color]))
-		print('    },')
+			dat_int = [int(x) for x in dat.text.replace('\n','').split(',')]
+			items = []
+			for n,t in enumerate(dat_int) :
+				if not t : continue
+				it = t-firstgid_units
+				color = it//16
+				unit  = it%16
+				if unit==15 : continue # flag : fixme special
 
-print("};")
+				x = n%tmap_w
+				y = n//tmap_w
+				items.append((x,y,colors[color],units[unit]))
+			lvl['items'] = items
+
+	else : # real level
+		d={'name':lvlname}
+		intro_elt = l.find("properties/property[@name='intro']")
+		d['intro'] = intro_elt.get('value') if intro_elt is not None else None
+		lvl_list.append(d)
+
+print('// - Levels ----------- ')
+
+print ('// Level name, intro text')
+print ('const struct LevelDef level_info[]={')
+for lvl in lvl_list :
+	print('    {')
+	print('        .name="%s",'%lvl['name'])
+	print('        .intro="%s",'%lvl['intro'])
+	print('        .nb_players=%d,'%len(set(i[2] for i in lvl['items'])))
+	print('        .units = { // units initial positions')
+	for x,y,color,unit in lvl['items']:
+		print("            {%d,%d,unit_%s+1,color_%s},"%(x,y,unit,color))
+	print('        },')
+	print('    },')
+
+print ('};')
 
 print('#endif')
