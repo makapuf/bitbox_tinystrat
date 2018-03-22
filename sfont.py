@@ -66,6 +66,5 @@ def out_font(filename, outfile) :
             of.write(bytes(bts))
         print (of.tell(),'bytes written to',outfile)
 
-out_font('sfont_gothic.png','gothic.fon')
-out_font('sfont_italic.png','italic.fon')
-
+#out_font('sfont_gothic.png','gothic.fon')
+out_font(sys.argv[1],sys.argv[1].replace('.png','.fon'))

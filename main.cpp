@@ -208,8 +208,9 @@ int main_menu()
     // menu
     Surface surf { 144, 176, &surface_data };
     surf.setpalette (surface_pal);
-    for (int i=0;i<3;i++)
-        surf.fillrect (10,10+40*i,100,30+40*i,i);
+    for (int i=0;i<4;i++)
+        surf.fillrect (15+i,40*i,144-i,40*i+30,i);
+    surf.text("Hello1234",0,0,data_font_fon);
     blitter_insert(&surf, 240,80,50);
     // wait keypress
     while (!GAMEPAD_PRESSED(0,start));

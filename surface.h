@@ -15,4 +15,18 @@ struct Surface : public object
 	void setpalette (pixel_t *pal);
 	// color between 0 and 3
 	void fillrect (int x1, int y1, int x2, int y2, uint8_t color);
+
+	/**
+  \brief draws a text on a surface
+  \param surface the surface to draw on
+  \param text the text to draw
+  \param x,y the coordinates of the text on the surface. must be even.
+  \param basecolor : the first color to draw with, will use the 4 next colors.
+
+  Beware, this implementation will not do clipping (yet)
+ */
+	void text(const char *text, int x, int y, const void *font);
+
+private:
+	static void drawline (struct object *o);
 };

@@ -11,7 +11,7 @@ SPRITES := units_16x16 misc_16x16 faces_26x26 fight_200x200 bignum_16x24 \
 	next_player menus_88x82 main_menu \
 	$(TERRAINS:%=bg_%) $(INTRO:%=intro_%)
 
-BINARY_FILES := tiles_bg.tset map.map palettes.bin music/song.mod \
+BINARY_FILES := tiles_bg.tset map.map palettes.bin music/song.mod font.fon \
 	$(SPRITES:%=sprites/%.spr)
 
 GAME_C_FILES = main.cpp pathfinding.cpp player.cpp game.cpp grid.cpp ai.cpp combat.cpp unit.cpp\
@@ -33,6 +33,9 @@ data.h: $(BINARY_FILES)
 	sdk/lib/resources/embed.py  $^ -r spr map tset> $@
 
 -include sdk/kernel/bitbox.mk
+
+%.fon: %.png
+	python3 sfont.py $^
 
 %.h %.tset : %.tsx %.png
 	$(GRSCRIPTS)/mk_tset.py $< > $*.h
