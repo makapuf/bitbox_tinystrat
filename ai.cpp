@@ -62,7 +62,18 @@ void find_next_best(Unit &u, int &npos, Unit * &target)
 		// "move" it to new destination - should not be visible
 		u.position(dest);
 
+<<<<<<< HEAD
 		const int harvest_score = u.can_harvest()<0 ? 0 : 10;
+=======
+		int harvest_score = 0; // harvesting position
+
+        if ( u.type() == unit_farmer || u.type() == unit_farmer_f ) {
+            // find resource for terrain
+            for (int res=0;res<4;res++)
+                if (resource_terrain[res]==tile_terrain[game_info.vram[dest]]) // terrain on destination
+                	harvest_score = 10;
+        }
+>>>>>>> 60dc692d2f20136be48911e58a61d743a805f372
 
 		const int proxymity_score = 0; // closer to my own units
 		const int target_proximity_score = 0; // closer to castle

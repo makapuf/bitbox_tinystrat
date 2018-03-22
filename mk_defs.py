@@ -159,9 +159,19 @@ print('''struct LevelDef {
 	uint8_t units[32][4]; // initial position of units
 };''')
 
+print('''struct LevelDef {
+	char *name;
+	char *intro;
+	uint8_t nb_players;
+	uint8_t units[32][4]; // initial position of units
+};''')
+
 print('extern const uint8_t tile_terrain[];')
 print('extern const char * terrain_names[];')
+<<<<<<< HEAD
 print('extern const uint8_t anim_tiles[][4];');
+=======
+>>>>>>> 60dc692d2f20136be48911e58a61d743a805f372
 
 print('extern const char * unit_names[];')
 print('extern const uint8_t unit_damage_table[][NB_UNITS];')
