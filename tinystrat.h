@@ -64,7 +64,8 @@ void play_CPU (void);
 struct Cell {
     unsigned cost:6;
     unsigned pos:10; // comes from (absolute)
-};
+} __attribute__((packed));
+
 #define MAX_COST 63 // 6 bits
 #define FRONTIER_SIZE 32 // max elements in frontier
 

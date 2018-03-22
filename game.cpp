@@ -146,7 +146,7 @@ void Game::load_units()
 {
     // load / free unused units
     for (int i=0;i<MAX_UNITS;i++) { // unit
-        const uint8_t *unit = &level_units[level][i][0];
+        const uint8_t *unit = &level_info[level].units[i][0];
 
         if (!unit[2]) {// no type defined : set as not used
             units[i].line = nullptr;
