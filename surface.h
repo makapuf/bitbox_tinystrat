@@ -7,7 +7,7 @@ extern "C" {
 #include "lib/blitter/blitter.h"
 }
 
-#define SURFACE_BUFSZ(w,h) ( (w+3)/4*h + 16*sizeof(couple_t) )
+#define SURFACE_BUFSZ(w,h) ( (w+15)/16*4*h + 16*sizeof(couple_t) )
 
 struct Surface : public object
 {
@@ -15,6 +15,8 @@ struct Surface : public object
 	void setpalette (pixel_t *pal);
 	// color between 0 and 3
 	void fillrect (int x1, int y1, int x2, int y2, uint8_t color);
+	// draw a single char, return its width
+	int chr (const char c, int x, int y, const void *fontdata);
 
 	/**
   \brief draws a text on a surface

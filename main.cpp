@@ -34,7 +34,7 @@ int8_t sinus(int x)
     static const uint8_t sine_table[] = {
          0, 12,  24,  37,  48,  60,  71,  81,
         90, 98, 106, 112, 118, 122, 125, 127
-    };
+    }; // fixme to mk_defs
     x %= 64;
 
     if (x<16)
@@ -175,13 +175,13 @@ void intro()
 
     message("End of intro.\n");
 }
-
+#define RGB2(r,g,b)  ( ((r)*31/255)<<10 | ((g)*31/255)<<5 | (b)*31/255 ) // more accurate
 char surface_data[SURFACE_BUFSZ(144,176)];
 pixel_t surface_pal[] = {
-    RGB(205,201,185),
-    RGB(92,86,77),
-    RGB(71,65,57),
-    RGB(46,38,33),
+    RGB2(205,201,185),
+    RGB2(112,116,105),
+    RGB2(75,67,61),
+    RGB2(46,38,33),
 };
 
 // main_menu : new game, about, ...
@@ -193,27 +193,43 @@ int main_menu()
     object bg;
     sprite3_load(&bg, SPRITE(main_menu));
 
+    blitter_insert(&bg, 0,0,200);
+
     // replace with ram palette
     uint16_t *src_pal = (uint16_t*) bg.b; // in rom
     bg.b = (uintptr_t) ram_palette;
-
-    blitter_insert(&bg, 0,0,200);
 
     // fade-in palette
     for (int i=0;i<256;i+=4) {
         palette_fade(255, &bg, src_pal, i);
         wait_vsync();
     }
-
     // menu
     Surface surf { 144, 176, &surface_data };
     surf.setpalette (surface_pal);
-    for (int i=0;i<4;i++)
-        surf.fillrect (15+i,40*i,144-i,40*i+30,i);
-    surf.text("Hello1234",0,0,data_font_fon);
     blitter_insert(&surf, 240,80,50);
+
+    surf.text("Level",0,0,data_font_fon);
+    surf.chr(126,100,0,data_font_fon); // players
+
+    for (int i=0;i<2;i++) {
+        surf.text(level_info[i].name,0,20+16*i,data_font_fon);
+        surf.chr('0'+level_info[i].nb_players,100,20+16*i,data_font_fon);
+    }
+    surf.fillrect(1,  17,143, 18,1);
+    surf.fillrect(1,175 ,143,176,1);
+
     // wait keypress
-    while (!GAMEPAD_PRESSED(0,start));
+    static const uint8_t cursor_anim[] {127,128,129,128};
+    // sigmoid/pow2 in 16 frames 0 -> 20 for anims -> in mk_defs
+    while (!GAMEPAD_PRESSED(0,start)) {
+        surf.chr(cursor_anim[vga_frame/8%4],120,20,data_font_fon);
+        wait_vsync();
+        // if pressed down, animation down & continue
+
+    }
+
+    blitter_remove(&surf);
 
     // fade-out palette
     for (int i=0;i<256;i+=4) {
@@ -222,7 +238,6 @@ int main_menu()
     }
 
     blitter_remove(&bg);
-    blitter_remove(&surf); // destructor ?
     return 0;
 }
 

@@ -62,7 +62,7 @@ def out_font(filename, outfile) :
                 #print (line,n)
                 for _ in range(bpl):
                     bts.append(n&0xff)
-                    n <<= 8
+                    n >>= 8
             of.write(bytes(bts))
         print (of.tell(),'bytes written to',outfile)
 
