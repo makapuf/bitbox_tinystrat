@@ -6,8 +6,10 @@
 extern "C" {
 #include "sdk/lib/blitter/blitter.h" // object
 }
+#include "surface.h"
 
 // fixme put in game
+
 /* updates info about terrain under mouse_cursor
    returns the unit under mouse_cursor if any or NULL
    */
@@ -19,14 +21,14 @@ void update_cursor_info(void)
     cursor->fr=(vga_frame/32)%2 ? fr_unit_cursor : fr_unit_cursor2;
 
     // terrain under the mouse_cursor
-    const uint16_t tile_id = game_info.vram[(cursor->y/16)*SCREEN_W + cursor->x/16];
+    const uint16_t tile_id = game_info.vram[game_info.cursor_position()];
     int terrain_id = tile_terrain[tile_id];
     game_info.vram[3]=tile_id;
     // defense info
     game_info.vram[6]=tile_zero + terrain_defense[terrain_id];
 
     // find unit under mouse_cursor - if any
-    game_info.cursor_unit = game_info.unit_at(cursor->x/16 + (cursor->y/16)*SCREEN_W);
+    game_info.cursor_unit = game_info.unit_at(game_info.cursor_position());
 
     game_info.draw_hud();
 }
@@ -48,35 +50,42 @@ void move_cursor(uint16_t gamepad_pressed)
         cursor->y += 16;
 }
 
-// get cursor position on tilemap
-int cursor_position (void)
-{
-    object *const c = &game_info.cursor;
-    return (c->y/16)*SCREEN_W + c->x/16;
-}
+char surface_data[SURFACE_BUFSZ(128,128)]; // 4k buffer
 
+static const pixel_t surface_pal[] = {
+    RGB(222,211,168),
+    RGB(112,116,105),
+    RGB(75,67,61),
+    RGB(46,38,33),
+};
 
-// returns a choice between 1 and nb_choices or zero to cancel
-unsigned int menu(int menu_id, int nb_choices)
+static const uint8_t bullet_animation[] = {
+    fr_misc_bullet1,
+    fr_misc_bullet2,
+    fr_misc_bullet3,
+    fr_misc_bullet2
+};
+
+// returns a choice between 0 and nb_choices-1 or -1 to cancel
+int menu (const char *choices[], int nb_choices, int x,int y)
 {
     object menu, bullet;
-    sprite3_load(&menu  , SPRITE(menus_88x82));
-    sprite3_load(&bullet, SPRITE(units_16x16));
+    Surface surf { 80, 123, &surface_data };
 
-    blitter_insert(&bullet, MENU_X*16,MENU_Y*16+8,0);
-    blitter_insert(&menu,   MENU_X*16,MENU_Y*16,  1);
+    sprite3_load(&menu  , SPRITE(menu_border));
+    sprite3_load(&bullet, SPRITE(misc_16x16));
+    surf.setpalette (surface_pal);
 
-    // unroll menu ?
-    menu.fr = menu_id;
+    for (int i=0;i<nb_choices;i++) {
+        surf.text(choices[i],0,16*i,data_font_fon);
+    }
+
+    blitter_insert(&surf, x+16,y+8,5);
+    blitter_insert(&menu,    x,y  ,5);
+    blitter_insert(&bullet,  x,y+6,0);
 
     // select option
     // wait for keypress / animate
-    const uint8_t bullet_animation[] = {
-        fr_unit_bullet1,
-        fr_unit_bullet2,
-        fr_unit_bullet3,
-        fr_unit_bullet2
-    };
     uint16_t pressed;
 
     uint8_t choice=0;
@@ -85,13 +94,23 @@ unsigned int menu(int menu_id, int nb_choices)
         if (pressed & gamepad_up) {
             if (choice==0)
                 choice = nb_choices-1;
-            else
+            else {
+                for (int i=0;i<8;i++) {
+                    bullet.y -=2;
+                    wait_vsync();
+                }
                 choice--;
+            }
         } else if (pressed & gamepad_down) {
             if (choice==nb_choices-1)
                 choice = 0;
-            else
+            else {
+                for (int i=0;i<8;i++) {
+                    bullet.y +=2;
+                    wait_vsync();
+                }
                 choice++;
+            }
         } else if (pressed & gamepad_A) {
             break;
         } else if (pressed & gamepad_B) {
@@ -99,15 +118,48 @@ unsigned int menu(int menu_id, int nb_choices)
         }
 
         bullet.fr = bullet_animation[(vga_frame/16)%4];
-        bullet.y  =  MENU_Y*16+8+choice*16;
+        bullet.y  =  y+6+choice*16;
         wait_vsync();
     }
 
     blitter_remove(&bullet);
     blitter_remove(&menu);
+    blitter_remove(&surf);
 
-    return (pressed & gamepad_A) ? choice+1 : 0;
+    return (pressed & gamepad_A) ? choice : -1;
 }
+
+
+void text (int x, int y, const char *txt) // add optional face / expression
+{
+    // appears from top
+    object border, bullet;
+    sprite3_load(&border, SPRITE(text_border));
+    sprite3_load(&bullet, SPRITE(misc_16x16));
+
+    Surface surf { 128, 128, &surface_data };
+
+    surf.setpalette (surface_pal);
+
+    surf.text(txt,0,0,data_font_fon);
+    blitter_insert(&surf, x+24,y+29 ,1);
+    blitter_insert(&border,    x,y  ,1);
+    blitter_insert(&bullet,x+120,y+164,0);
+
+    // blink bullet
+    while (! gamepad_pressed()) {
+        bullet.fr = bullet_animation[(vga_frame/16)%4];
+        wait_vsync();
+    }
+
+    blitter_remove(&border);
+    blitter_remove(&surf);
+    blitter_remove(&bullet);
+}
+
+static const char *bg_menu[]={
+    "\x7f Help","\x80 Options","\x81 Save","\x82 End turn"
+};
 
 Unit* select_unit( void )
 {
@@ -124,11 +176,11 @@ Unit* select_unit( void )
         } while( !(pressed & gamepad_A) );
 
         play_sfx(sfx_select);
-        if (game_info.cursor_unit<0) {
-            int choice = menu(MENU_BG,4);
+        if (game_info.cursor_unit==nullptr) {
+            int choice = menu(bg_menu,SZ(bg_menu),50,50); // fixme right next to cursor 
             switch (choice) // bg click fixme handle end / exit ?
             {
-                case 4 :
+                case 3 :
                     game_info.finished_turn=1;
                     return nullptr;
                 default : // help, options, save ...
@@ -146,7 +198,7 @@ Unit* select_unit( void )
 
 int select_destination( Unit * selected )
 {
-    int start = cursor_position();
+    int start = game_info.cursor_position();
     game_info.grid.color_movement_range();
 
     // wait till button A pressed and on an empty space
@@ -172,7 +224,7 @@ int select_destination( Unit * selected )
         play_sfx(sfx_select);
 
         // get target destination
-        int dest = cursor_position();
+        int dest = game_info.cursor_position();
         if (dest == start)
             return dest; // do not move : nothing to check
 
@@ -279,34 +331,38 @@ void human_game_turn()
 
         game_info.get_possible_targets(*selected);
 
+        static const char *menu_attack[]={"\x84 Attack","\x83 Wait","\x82 Cancel"};
+        static const char *menu_empty []={"\x83 Wait","\x82 Cancel"};
         int action;
         if (game_info.nbtargets>0) // if there is anything to attack
-            action = menu(MENU_ATTACK,3);
-        else
-            action = menu(MENU_EMPTY,2)+1;
+            action = menu(menu_attack,SZ(menu_attack),50,50);
+        else {
+            action = menu(menu_empty ,SZ(menu_empty),50,50);
+            if (action >=0) action++; // same actions as preceding menu
+        }
 
 
         message("action %d\n",action);
         switch(action)
         {
-            case 0: // cancel
-            case 3:
+            case -1: // cancel
+            case 2:
                 // restore position
                 selected->position(old_pos);
                 break;
 
-            case 1 : // attack
+            case 0 : // attack
                 {
                     Unit *tgt = select_attack_target();
                     game_info.grid.clear();
 
-                    if (tgt>=0)
+                    if (tgt)
                         combat(*selected,*tgt);
                 }
                 selected->moved (true);
                 break;
 
-            case 2 : // wait : do nothing, set player moved.
+            case 1 : // wait : do nothing, set player moved.
                 selected->moved (true);
                 break;
         }

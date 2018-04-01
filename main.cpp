@@ -15,7 +15,6 @@ extern "C" {
 #include "game.h"
 #include "unit.h"
 #include "grid.h"
-#include "surface.h"
 
 #define SFX_CHANNEL (MOD_CHANNELS-1) // use last channel
 #define SFX_VOLUME 64
@@ -175,16 +174,10 @@ void intro()
 
     message("End of intro.\n");
 }
-#define RGB2(r,g,b)  ( ((r)*31/255)<<10 | ((g)*31/255)<<5 | (b)*31/255 ) // more accurate
-char surface_data[SURFACE_BUFSZ(144,176)];
-pixel_t surface_pal[] = {
-    RGB2(205,201,185),
-    RGB2(112,116,105),
-    RGB2(75,67,61),
-    RGB2(46,38,33),
-};
 
-// main_menu : new game, about, ...
+int menu (const char *choices[], int nb_choices, int x,int y);
+
+// main_menu : new game, about, ... + menus
 int main_menu()
 {
     for (int i=0;i<15;i++)
@@ -192,7 +185,6 @@ int main_menu()
 
     object bg;
     sprite3_load(&bg, SPRITE(main_menu));
-
     blitter_insert(&bg, 0,0,200);
 
     // replace with ram palette
@@ -204,41 +196,25 @@ int main_menu()
         palette_fade(255, &bg, src_pal, i);
         wait_vsync();
     }
-    // menu
-    Surface surf { 144, 176, &surface_data };
-    surf.setpalette (surface_pal);
-    blitter_insert(&surf, 240,80,50);
-
-    surf.text("Level",0,0,data_font_fon);
-    surf.chr(126,100,0,data_font_fon); // players
-
-    for (int i=0;i<2;i++) {
-        surf.text(level_info[i].name,0,20+16*i,data_font_fon);
-        surf.chr('0'+level_info[i].nb_players,100,20+16*i,data_font_fon);
-    }
-    surf.fillrect(1,  17,143, 18,1);
-    surf.fillrect(1,175 ,143,176,1);
 
     // wait keypress
-    static const uint8_t cursor_anim[] {127,128,129,128};
-    // sigmoid/pow2 in 16 frames 0 -> 20 for anims -> in mk_defs
-    while (!GAMEPAD_PRESSED(0,start)) {
-        surf.chr(cursor_anim[vga_frame/8%4],120,20,data_font_fon);
-        wait_vsync();
-        // if pressed down, animation down & continue
+    const char * choices[NB_LEVELS];
+    for (int i=0;i<NB_LEVELS;i++)
+        choices[i] = level_info[i].name;
 
-    }
-
-    blitter_remove(&surf);
+    int lvl;
+    do {
+        lvl = menu (choices, NB_LEVELS, 256,80);
+    } while (lvl==-1);
 
     // fade-out palette
-    for (int i=0;i<256;i+=4) {
-        palette_fade(255, &bg, src_pal, 255-i);
+    for (int i=0;i<128;i+=4) {
+        palette_fade(255, &bg, src_pal, 255-i*2);
         wait_vsync();
     }
 
     blitter_remove(&bg);
-    return 0;
+    return lvl;
 }
 
 
@@ -246,26 +222,27 @@ extern "C" {
     void bitbox_main()
     {
 
-        //intro();
-        main_menu();
+        // intro();
+        while (1) {
+            int level= main_menu();
 
-        // fixme select game level, parameters ...
+            // fixme select parameters ...
 
-        game_info.init();
+            game_info.init();
 
-        // play_level(0)
-        game_info.start_level(0);
-        do {
-            game_info.draw_hud();
-            game_info.ready_animation();
-            switch (game_info.player_type[game_info.current_player]) {
-                case player_human : human_game_turn(); break;
-                case player_cpu0  : play_CPU(); break;
-                case player_notused : break;
-                case player_off : break;
-            }
-            game_info.next_player();
-        } while (!game_info.finished_game);
-        game_info.leave_level(); // should be end of turn
+            game_info.start_level(level);
+            do {
+                game_info.draw_hud();
+                game_info.ready_animation();
+                switch (game_info.player_type[game_info.current_player]) {
+                    case player_human : human_game_turn(); break;
+                    case player_cpu0  : play_CPU(); break;
+                    case player_notused : break;
+                    case player_off : break;
+                }
+                game_info.next_player();
+            } while (!game_info.finished_game);
+            game_info.leave_level(); // should be end of turn
+        }
     }
 }

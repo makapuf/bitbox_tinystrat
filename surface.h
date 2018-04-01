@@ -7,12 +7,14 @@ extern "C" {
 #include "lib/blitter/blitter.h"
 }
 
+typedef uint32_t couple_t;
+
 #define SURFACE_BUFSZ(w,h) ( (w+15)/16*4*h + 16*sizeof(couple_t) )
 
 struct Surface : public object
 {
 	Surface(int w,int h,void *data);
-	void setpalette (pixel_t *pal);
+	void setpalette (const pixel_t *pal);
 	// color between 0 and 3
 	void fillrect (int x1, int y1, int x2, int y2, uint8_t color);
 	// draw a single char, return its width
@@ -28,7 +30,8 @@ struct Surface : public object
   Beware, this implementation will not do clipping (yet)
  */
 	void text(const char *text, int x, int y, const void *font);
-
+	void clear() { fillrect(0,0,w,h,0); }
+;
 private:
 	static void drawline (struct object *o);
 };

@@ -10,9 +10,11 @@ Surface::Surface (int _w, int _h, void *_data)
 	w=_w; h=_h; data = _data;
 	line = drawline;
 	frame=nullptr;
+
+	clear();
 }
 
-void Surface::setpalette (pixel_t *pal)
+void Surface::setpalette (const pixel_t *pal)
 {
 	couple_t *p = (couple_t*) data;
 	for (int i=0;i<4;i++)
@@ -54,15 +56,14 @@ void Surface::fillrect (int x1, int y1, int x2, int y2, uint8_t color)
 
 		// set last bits of word
 		const int nbits = (x1%16) * 2;
-		p[x1/16] = (p[x1/16] & (0xffffffff >> (32-nbits))) | (wc << nbits);
+		p[x1/16] = (p[x1/16] & (0xffffffffUL << (32-nbits))) | (wc << nbits);
 
 		// fill whole words
 		for (int i=x1/16+1;i<x2/16;i++) p[i] = wc;
-		//message("%d %x %x\n",y,wc,(0xffffffff >> (32-nbits)));
 
-		// set first bits of word
+		// set first bits of word - if any
 		const int nbits2 = (x2%16) * 2;
-		p[x2/16] = (p[x2/16] & (0xffffffff << nbits2)) | (wc >> (32-nbits2));
+		p[x2/16] = (p[x2/16] & (0xffffffffUL << nbits2)) | (wc >> (32-nbits2));
 
 		p += w/16; // next line
 	}
@@ -97,12 +98,13 @@ void Surface::text (const char *text, int x, int y,const void *fontdata)
 {
 	const Font* font = (const Font*) fontdata;
 	int cx = x; // current X
-	uint8_t *p = (uint8_t *)data + 16*sizeof(couple_t); // buffer start
 
 	for (const char*c=text ; *c;c++) {
 		if (*c =='\n') {
 			y += font->height+1;
 			cx = x;
+		} else if (*c=='\t') {
+			cx = (cx+48)/48*48;
 		} else {
 			cx += chr(*c, cx, y, fontdata) +1 ;
 		}

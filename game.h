@@ -33,6 +33,7 @@ struct Game {
 
     Grid grid;
 
+    // temp for current targets -> use a next_target() method ?
     Unit *targets[8];
     int nbtargets;
 
@@ -60,6 +61,11 @@ struct Game {
     // gets next unit of mine starting from this one, or first if 'from' is null
     // returns nullptr if none found
     Unit *myunits ( Unit *from );
+
+    // get cursor position on tilemap
+    inline int cursor_position (void) {
+        return (cursor.y/16)*SCREEN_W + cursor.x/16;
+    }
 };
 
 extern Game game_info;

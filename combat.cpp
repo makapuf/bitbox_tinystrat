@@ -53,6 +53,9 @@ struct Opponent {
 
         blitter_insert(&bg,     left ? 0   : 200, left?-200:300,35);
         blitter_insert(&sprite, left ? -30 : 240, 180, 5 );
+
+        message ("bg : %x\n",&bg);
+        
         // also other units ...
         sprite.d |= 1; // set render 2X
         sprite.h *= 2;

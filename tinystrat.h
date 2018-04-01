@@ -16,6 +16,8 @@ extern "C" {
 #define MENU_Y 5
 #define MAX_PATH 16
 
+#define SZ(x) (sizeof(x)/sizeof(x[0]))// size of array
+
 enum Player_type_enum {
     player_notused,
     player_human,

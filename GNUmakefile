@@ -8,7 +8,7 @@ TERRAINS :=  mountains forest town fields stable sea beach \
 INTRO := tiny bg horse_left horse_right objects_left objects_right wars
 
 SPRITES := units_16x16 misc_16x16 faces_26x26 fight_200x200 bignum_16x24 \
-	next_player menus_88x82 main_menu \
+	next_player main_menu menu_border text_border \
 	$(TERRAINS:%=bg_%) $(INTRO:%=intro_%)
 
 BINARY_FILES := tiles_bg.tset map.map palettes.bin song.mod font.fon \

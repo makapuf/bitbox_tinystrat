@@ -9,6 +9,8 @@ extern "C" {
 #include "lib/blitter/blitter.h"
 }
 
+void text(int x, int y, const char *txt);
+
 // find ID of unit at this screen position, or -1 if not found
 Unit *Game::unit_at(int pos)
 {
@@ -80,16 +82,19 @@ void Game::ready_animation()
     face.y=134;
     face.h=26;
 
-    object next_spr;
 
+    object next_spr;
     sprite3_load(&next_spr, SPRITE(next_player));
     blitter_insert(&next_spr,-60,130,1);
     for (int t=-80;t<80;t++) {
-        next_spr.x = (VGA_H_PIXELS-next_spr.w)/2+t*t*t/2048;
-        face.x=next_spr.x+2;
+        int x = (VGA_H_PIXELS-next_spr.w)/2+t*t*t/2048;
+        next_spr.x = x;
+
+        face.x = x+2;
         game_info.bg_frame();
         wait_vsync();
     }
+
     blitter_remove(&next_spr);
     draw_hud();
 
@@ -154,21 +159,24 @@ void Game::load_units()
             // special : flag
         } else {
             unit_new(unit[0],unit[1],unit[2]-1,unit[3]);
-            // player_type[unit[3]] = unit[3]==0 ? player_human : player_cpu0;
-            player_type[unit[3]] = player_cpu0;
+            player_type[unit[3]] = unit[3]==0 ? player_human : player_cpu0;
+            //player_type[unit[3]] = player_cpu0;
         }
     }
 }
 
+
 void Game::start_level(int _level)
 {
     level=_level;
+    message ("starting level %d \n",level);
 
     load_mod(&data_song_mod);
     load_map();
     load_units(); // also sets player type
     grid.show();
 
+    text (100,20,level_info[level].intro);
     finished_game = false;
 }
 
@@ -237,8 +245,6 @@ void Game::harvest()
     }
     blitter_remove(&spr);
 }
-
-
 
 void Game::draw_hud()
 {

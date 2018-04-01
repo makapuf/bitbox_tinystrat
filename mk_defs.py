@@ -2,6 +2,9 @@
 import xml.etree.ElementTree as ET
 from PIL import Image
 
+
+# -- Tileset -------------------------------------------------------------
+
 tsx=ET.parse('tiles_bg.tsx').getroot()
 
 # export terrains
@@ -14,11 +17,12 @@ tile2terrain = {
 colors   = 'blue red yellow green'.split()
 units    = 'farmer farmer_f soldier soldier_f archer guard guard2 catapult belier tower horse knight boat'.split() # in order horizontally
 cursors  = 'cursor cursor2 left right down up'.split()
-flags    = 'flag1 flag2 flag3 flag4 flag5 bullet1 bullet2 bullet3'.split()
+flags    = 'flag1 flag2 flag3 flag4 flag5'.split()
 
 resources = 'food gold wood stone'.split()
 tags      = 'hurt surrender medal1 medal2 medal3'.split()
 misc      = 'skull magic1 magic2 swirl1 swirl2 explo1 explo2 explo3 mouse bzz'.split()
+bullet    = 'bullet1 bullet2 bullet3'.split()
 menus 	  = 'bg harvest attack empty'.split()
 MOV_DEFAULT = 1
 ATTACK_DEFAULT=0
@@ -80,10 +84,51 @@ anim_tiles = [
 	for elt in tsx.findall('tile/animation')
 ] # no need to keep original tile
 
+# -- Maps -----------------------------------------------------------
+
+tmx=ET.parse('map.tmx').getroot()
+
+units_ts = [x for x in tmx.findall('tileset[image]') if x.find('image').get('source')=="map_units.png"][0]
+firstgid_units = int(units_ts.get('firstgid'))
+tmap_w = int(tmx.get('width'))
+
+level_list = [] # list of dicts with level infos
+
+for l in tmx.findall('layer') :
+	lvlname = l.get('name')
+	if lvlname.startswith('_'):
+		if lvlname.endswith('_units') :
+			lvl = level_list[-1] # preceding level
+			assert lvlname[1:-6] == lvl['name'], "%s level in map must be just over level %s, not %s"%(lvlname, lvlname[1:-6], lvl['name'])
+
+			dat = l.find('data')
+			assert dat.get('encoding')=='csv','not a csv file'
+
+			dat_int = [int(x) for x in dat.text.replace('\n','').split(',')]
+			items = []
+			for n,t in enumerate(dat_int) :
+				if not t : continue
+				it = t-firstgid_units
+				color = it//16
+				unit  = it%16
+				if unit==15 : continue # flag : fixme special
+
+				x = n%tmap_w
+				y = n//tmap_w
+				items.append((x,y,colors[color],units[unit]))
+			lvl['items'] = items
+
+	else : # real level
+		d={'name':lvlname}
+		intro_elt = l.find("properties/property[@name='intro']")
+		d['intro'] = intro_elt.get('value') or intro_elt.text if intro_elt is not None else None
+		level_list.append(d)
+
+
 # === EXPORT ================================================================
 
-# Headers
-# ---------------------------------
+# - Headers ---------------------------------
+
 print('#include <stdint.h>')
 print('#include "data.h"')
 print('#ifndef DEFS_DEFINITION')
@@ -138,7 +183,9 @@ for ai,a in enumerate(tags) :
 for i in range(16) :
 	print("    fr_misc_%d = %d,"%(i,16+i))
 for ai,a in enumerate(misc) :
-	print("    fr_misc_%s = %d,"%(a,24+ai))
+	print("    fr_misc_%s = %d,"%(a,32+ai))
+for ai,a in enumerate(bullet) :
+	print("    fr_misc_%s = %d,"%(a,48+ai))
 print('};')
 
 
@@ -150,6 +197,7 @@ for t in ('wood','zero','P1','mark'):
 # menus
 for i,m in enumerate(menus) :
 	print("#define MENU_%s %d"%(m.upper(),i))
+
 print ('#define NB_TILES_ANIMATIONS ',len(anim_tiles));
 
 print('''struct LevelDef {
@@ -173,12 +221,13 @@ print('extern const uint8_t terrain_move_cost[][NB_TERRAINS];')
 print('extern const char *terrain_bg_table[];')
 print('extern const uint8_t resource_terrain[];')
 
-print ('extern const struct LevelDef level_info[];')
+print ('#define NB_LEVELS',len(level_list))
+print ('extern const struct LevelDef level_info[NB_LEVELS];')
+
 print('#endif\n')
 
 
-# Implementation
-# ----------------------
+# - Implementation ----------------------
 
 print('#ifdef DEFS_IMPLEMENTATION')
 
@@ -251,55 +300,19 @@ for anim in anim_tiles :
 print ('};')
 
 
-# map units
+# Map - related
 # --------------------------
-tmx=ET.parse('map.tmx').getroot()
-
-units_ts = [x for x in tmx.findall('tileset[image]') if x.find('image').get('source')=="map_units.png"][0]
-firstgid_units = int(units_ts.get('firstgid'))
-tmap_w = int(tmx.get('width'))
-
-lvl_list = [] # list of dicts with level infos
-
-for l in tmx.findall('layer') :
-	lvlname = l.get('name')
-	if lvlname.startswith('_'):
-		if lvlname.endswith('_units') :
-			lvl = lvl_list[-1] # preceding level
-			assert lvlname[1:-6] == lvl['name'], "%s level in map must be just over level %s, not %s"%(lvlname, lvlname[1:-6], lvl['name'])
-
-			dat = l.find('data')
-			assert dat.get('encoding')=='csv','not a csv file'
-
-			dat_int = [int(x) for x in dat.text.replace('\n','').split(',')]
-			items = []
-			for n,t in enumerate(dat_int) :
-				if not t : continue
-				it = t-firstgid_units
-				color = it//16
-				unit  = it%16
-				if unit==15 : continue # flag : fixme special
-
-				x = n%tmap_w
-				y = n//tmap_w
-				items.append((x,y,colors[color],units[unit]))
-			lvl['items'] = items
-
-	else : # real level
-		d={'name':lvlname}
-		intro_elt = l.find("properties/property[@name='intro']")
-		d['intro'] = intro_elt.get('value') if intro_elt is not None else None
-		lvl_list.append(d)
 
 print('// - Levels ----------- ')
 
 print ('// Level name, intro text')
 print ('const struct LevelDef level_info[]={')
-for lvl in lvl_list :
+for lvl in level_list :
 	print('    {')
-	print('        .name="%s",'%lvl['name'])
-	print('        .intro="%s",'%lvl['intro'])
-	print('        .nb_players=%d,'%len(set(i[2] for i in lvl['items'])))
+	nb_players = len(set(i[2] for i in lvl['items']));
+	print('        .name="%s\t%s",'%(lvl['name'],nb_players*'~'))
+	print('        .intro="%s",'%lvl['intro'].replace('\n','\\n'))
+	print('        .nb_players=%d,'%nb_players)
 	print('        .units = { // units initial positions')
 	for x,y,color,unit in lvl['items']:
 		print("            {%d,%d,unit_%s+1,color_%s},"%(x,y,unit,color))
