@@ -10,28 +10,6 @@ extern "C" {
 
 // fixme put in game
 
-/* updates info about terrain under mouse_cursor
-   returns the unit under mouse_cursor if any or NULL
-   */
-void update_cursor_info(void)
-{
-    object * const cursor = &game_info.cursor;
-
-    // "blink" mouse_cursor
-    cursor->fr=(vga_frame/32)%2 ? fr_unit_cursor : fr_unit_cursor2;
-
-    // terrain under the mouse_cursor
-    const uint16_t tile_id = game_info.vram[game_info.cursor_position()];
-    int terrain_id = tile_terrain[tile_id];
-    game_info.vram[3]=tile_id;
-    // defense info
-    game_info.vram[6]=tile_zero + terrain_defense[terrain_id];
-
-    // find unit under mouse_cursor - if any
-    game_info.cursor_unit = game_info.unit_at(game_info.cursor_position());
-
-    game_info.draw_hud();
-}
 
 void move_cursor(uint16_t gamepad_pressed)
 {
@@ -170,7 +148,7 @@ Unit* select_unit( void )
         do {
             pressed  = gamepad_pressed();
             move_cursor(pressed);
-            update_cursor_info();
+            game_info.update_cursor_info();
             game_info.bg_frame();
             wait_vsync();
         } while( !(pressed & gamepad_A) );
@@ -210,7 +188,7 @@ int select_destination( Unit * selected )
 
             pressed = gamepad_pressed();
             move_cursor(pressed);
-            update_cursor_info();
+            game_info.update_cursor_info();
             wait_vsync();
 
             if (pressed & gamepad_A) break;

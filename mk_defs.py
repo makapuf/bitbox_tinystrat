@@ -189,8 +189,8 @@ for ai,a in enumerate(bullet) :
 print('};')
 
 
-# other named tiles in tileset
-for t in ('wood','zero','P1','mark'):
+# named tiles in tileset
+for t in ('gold', 'wood','zero','P1','mark'):
 	elt = tsx.find('tile[@type="%s"]'%t)
 	print("#define tile_%s %d"%(t,int(elt.get('id'))+1))
 

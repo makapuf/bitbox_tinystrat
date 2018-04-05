@@ -43,6 +43,11 @@ struct Game {
 
 	void harvest(); // harvest for current player
 
+    /* updates info about terrain under mouse_cursor
+       returns the unit under mouse_cursor if any or NULL
+       */
+    void update_cursor_info(void);
+
 	void init();
 	void next_player();
 	void start_level(int level);

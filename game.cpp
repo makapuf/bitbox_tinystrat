@@ -145,6 +145,9 @@ void Game::load_map() {
         &data_map [ MAP_HEADER_SZ+sizeof(vram)*level ],
         sizeof(vram)
     );
+
+    // copy background from first level over
+    memcpy( vram, &data_map [MAP_HEADER_SZ], SCREEN_W*2 );
 }
 
 void Game::load_units()
@@ -262,6 +265,37 @@ void Game::draw_hud()
     face.x = 0;
     face.y = -6;
     face.h = 21;
+}
+
+/* updates info about terrain under mouse_cursor
+   returns the unit under mouse_cursor if any or NULL
+   */
+void Game::update_cursor_info(void)
+{
+    // "blink" mouse_cursor
+    cursor.fr=(vga_frame/32)%2 ? fr_unit_cursor : fr_unit_cursor2;
+
+    // terrain under the mouse_cursor
+    const uint16_t tile_id = vram[game_info.cursor_position()];
+    int terrain_id = tile_terrain[tile_id];
+    vram[3]=tile_id;
+    // defense info
+    vram[6]=tile_zero + terrain_defense[terrain_id];
+
+    // resource tile
+    vram[7] = 162;
+    for (int r=0;r<4;r++) {
+        if (resource_terrain[r]==terrain_id) {
+            vram[7] = tile_gold + r;
+            break;
+        }
+    }
+
+
+    // find unit under mouse_cursor - if any
+    cursor_unit = unit_at(cursor_position());
+
+    draw_hud();
 }
 
 
