@@ -61,12 +61,11 @@
    </animation>
   </tile>
  </tileset>
- <layer name="start" width="25" height="19" visible="0" locked="1">
+ <layer name="start" width="25" height="19" locked="1">
   <properties>
-   <property name="intro">This is the first map,
- it's also quite 
- a placeholder,
- or a test ...</property>
+   <property name="intro">Welcome to the first map.
+You'll start testing here how to do what you need. 
+ it's also quite a placeholder, or a test ...</property>
   </properties>
   <data encoding="csv">
 162,162,199,11,168,211,176,163,162,165,167,168,209,179,162,165,207,182,204,176,206,177,205,182,216,
@@ -135,11 +134,11 @@
 113,113,113,113,113,113,113,113,113,113,113,113,113,113,113,113,113,113,113,113,123,136,1,1,127,
 123,135,135,135,135,135,135,135,135,135,135,135,135,135,135,135,135,135,135,135,136,1,1,1,134,
 129,1,54,55,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,1,1,
-129,1,61,62,1,1,2,2,1,1,1,1,1,1,2,2,1,1,1,1,1,1,1,1,1,
-35,35,35,35,35,35,35,35,35,35,35,35,35,35,35,35,35,35,35,35,35,35,35,35,35
+129,1,61,62,1,1,2,2,1,1,1,1,2,1,2,2,1,1,1,1,1,1,1,1,1,
+129,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1
 </data>
  </layer>
- <layer name="_water_units" width="25" height="19">
+ <layer name="_water_units" width="25" height="19" visible="0">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,

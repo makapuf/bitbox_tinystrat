@@ -311,10 +311,12 @@ void human_game_turn()
 
     while (1) {
         Unit *selected = select_unit();
-        message("selected unit :\n"); selected->info();
 
         if (game_info.finished_turn)
             break; // end of turn : exit loop
+
+        message("selected unit :\n");
+        selected->info();
 
         update_pathfinding(*selected);
 

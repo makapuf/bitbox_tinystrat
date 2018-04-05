@@ -33,7 +33,8 @@ void Surface::drawline (struct object *o)
 	couple_t * start = (couple_t*) draw_buffer + o->x/2 ;
 	couple_t * end   = (couple_t*) draw_buffer + (o->x+o->w)/2;
 
-	uint8_t oldsrc = *src+1; // not src
+	uint8_t oldsrc = *src+1; // not src so first time they WILL updated.
+
 	couple_t c1,c2;
 	for (couple_t *dst = start; dst < end; src++, dst+=2) {
 		if (*src != oldsrc) { // avoid palette fetch if same src
@@ -41,8 +42,11 @@ void Surface::drawline (struct object *o)
 		 	c2 = palette[*src >> 4];
 		 	oldsrc = *src;
 		}
+		#pragma GCC diagnostic push
+ 		#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 	 	dst[0] = c1;
 		dst[1] = c2;
+		#pragma GCC diagnostic pop
 	}
 }
 
@@ -86,7 +90,7 @@ int Surface::chr (const char c, int x, int y, const void *fontdata)
 		const uint8_t *cp = &font->data[(ch*font->height + j)*font->bytes_per_line]; // source word address
 		uint32_t *dst = (uint32_t *)&p[(w/4)*(y+j)+x/4]; // existing word, byte aligned
 		uint32_t pw = *dst; // read existing pixels
-		// pw &= 0xffffffff << (cw*2); // fixme mask it or not if transparent render
+		// pw &= 0xffffffff << (cw*2); // fixme mask it - or not if transparent render ?
 		pw |= *(uint32_t *)cp << ((x%4)*2); // read 32 bits, shift them right
 		*dst = pw; // write it back
 	}
@@ -100,13 +104,21 @@ void Surface::text (const char *text, int x, int y,const void *fontdata)
 	int cx = x; // current X
 
 	for (const char*c=text ; *c;c++) {
+
+		if (y+font->height >= h)
+			break;
+
 		if (*c =='\n') {
 			y += font->height+1;
 			cx = x;
 		} else if (*c=='\t') {
 			cx = (cx+48)/48*48;
 		} else {
-			cx += chr(*c, cx, y, fontdata) +1 ;
+			if (cx>w-4) {
+				y+=font->height+1;
+				cx=x;
+			}
+			cx += chr(*c, cx, y, fontdata);
 		}
 	}
 }
