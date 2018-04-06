@@ -158,9 +158,10 @@ void Game::load_units()
 
         if (!unit[2]) {// no type defined : set as not used
             units[i].line = nullptr;
-        } else if (unit[2]==16) {
+//        } else if (unit[2]==16) {
             // special : flag
         } else {
+            message("unit %d\n",unit[2]);
             unit_new(unit[0],unit[1],unit[2]-1,unit[3]);
             player_type[unit[3]] = unit[3]==0 ? player_human : player_cpu0;
             //player_type[unit[3]] = player_cpu0;
@@ -328,6 +329,12 @@ static uint8_t find_next_anim_tile(uint8_t tile_id)
 // update background animations & wait next frame
 void Game::bg_frame()
 {
+    // update one unit per frame (fixme not constant..)
+    Unit &u = units[vga_frame%MAX_UNITS];
+    if (u.type() == unit_flag) {
+        u.fr = u.fr/8*8 + (u.fr+1)%6;
+    }
+
     // update one line per frame
     const int line = vga_frame%32;
     if (line==0 || line>=SCREEN_H) return;

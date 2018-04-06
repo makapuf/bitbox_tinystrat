@@ -15,7 +15,7 @@ tile2terrain = {
 }
 
 colors   = 'blue red yellow green'.split()
-units    = 'farmer farmer_f soldier soldier_f archer guard guard2 catapult belier tower horse knight boat'.split() # in order horizontally
+units    = 'farmer farmer_f soldier soldier_f archer guard guard2 catapult belier tower horse knight boat flag'.split() # in order horizontally
 cursors  = 'cursor cursor2 left right down up'.split()
 flags    = 'flag1 flag2 flag3 flag4 flag5'.split()
 
@@ -33,6 +33,7 @@ def unit_type(unit) :
 		('belier','catapult','tower') : 'wheels',
 		('horse','knight') : 'horse',
 		('boat',) : 'boat',
+		('flag',) : 'flag',
 	}
 	for k,v in list(MTYPES.items()) :
 		if unit in k :
@@ -66,11 +67,11 @@ def damage(of,to) :
 def unit_attack_range(u) :
 	u2 = u.split('_')[0]
 	if u2=='farmer' : return (0,0)
-	if u2=='catapult' : return (2,8)
+	if u2=='catapult' : return (2,5)
 	return (0,1)
 
 def unit_distance_range(u) :
-	return {'foot':5,'wheels':4,'horse':10,'boat':10}[unit_type(u)]
+	return {'foot':5,'wheels':4,'horse':10,'boat':10,'flag':0}[unit_type(u)]
 
 resources_terrains = [
     ('food', 'fields'),
@@ -111,7 +112,6 @@ for l in tmx.findall('layer') :
 				it = t-firstgid_units
 				color = it//16
 				unit  = it%16
-				if unit==15 : continue # flag : fixme special
 
 				x = n%tmap_w
 				y = n//tmap_w
@@ -168,10 +168,7 @@ for ui,u in enumerate(units) :
 	print("    fr_unit_%s = %d,"%(u,ui*8))
 print('    // cursors')
 for ui,u in enumerate(cursors) :
-	print("    fr_unit_%s = %d,"%(u,len(units)*8+ui))
-print('    // flags')
-for ui,u in enumerate(flags) :
-	print("    fr_unit_%s = %d,"%(u,len(units)*8+8+ui))
+	print("    fr_unit_%s = %d,"%(u,15*8+ui))
 print("};")
 
 print('// - sprite misc.')
@@ -205,6 +202,7 @@ print('''struct LevelDef {
 	char *intro;
 	uint8_t nb_players;
 	uint8_t units[32][4]; // initial position of units
+	uint16_t base[4]; // position of each main base
 };''')
 
 print('extern const uint8_t tile_terrain[];')

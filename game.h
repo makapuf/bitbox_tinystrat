@@ -21,6 +21,7 @@ struct Game {
     uint8_t player_avatar[4];
 
     uint8_t resources[4][4]; // per color / resource id
+    object  flag[4]; // main base
 
     // global info
     Unit units[MAX_UNITS];      // frame as unit type, set line=0 if not used. palette as player+aleady moved (faded)

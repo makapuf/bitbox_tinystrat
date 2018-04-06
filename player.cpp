@@ -8,9 +8,6 @@ extern "C" {
 }
 #include "surface.h"
 
-// fixme put in game
-
-
 void move_cursor(uint16_t gamepad_pressed)
 {
     object * const cursor = &game_info.cursor;
