@@ -11,7 +11,7 @@ extern "C" { void sprite3_cpl_line_noclip (struct object *o); }
 
 struct Unit : public object
 {
-    bool operator!() { return line==nullptr; } // truth testing
+    bool operator!() const { return line==nullptr; } // truth testing
 
     // return unit_type_id
     int  type () const { return fr/8; }
@@ -29,8 +29,7 @@ struct Unit : public object
     // frame 0-1, direction nsew
     void set_frame (int direction, int frame) { fr = (fr & ~7) | direction*2 | frame; }
 
-
-    bool moved () const { return palette()/4; }
+    bool moved () const { return palette()/4 || type()==unit_flag; }
     void moved (bool moved) { palette( player() + (moved ? 4 : 0)); }
 
     // gets position of a unit - hidden or not
@@ -67,8 +66,9 @@ struct Unit : public object
     void show () { y &= ~1024; }
 
     void info() const { // tostring ?
-        message ("unit: player:%d type:%s on terrain:%s\n",
-                player(), unit_names[type()], terrain_names[terrain()]
+        if (!*this) message("UNIT INACTIVE !");
+        message ("unit player:%d type:%s on terrain:%s x:%d y:%d\n",
+                player(), unit_names[type()], terrain_names[terrain()],x/16,y/16
                 );
     }
 
@@ -83,7 +83,7 @@ struct Unit : public object
         int defense = terrain_defense[to.terrain()];
         int damage = attack*256 / (defense+5);
         message("attack %d def %d res: %d\n",attack,defense,damage);
-        return damage;
+        return damage<=255 ? damage : 255;
     }
 
     // move unit animation
@@ -105,6 +105,9 @@ struct Unit : public object
         attacked.health(h>damage ? h-damage : 0); // do not remove unit yet, anims not done
         return damage;
     }
+
+    // after combat is finished, call for each unit on board
+    void die();
 
     // blit it
     static void graph_line(struct object *o) {

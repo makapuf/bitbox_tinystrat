@@ -8,7 +8,7 @@
 struct Game {
 	uint8_t map_id;
     uint8_t level; // current level
-    uint8_t day;
+    int day;
     bool finished_game;
     bool finished_turn;
 
@@ -42,6 +42,8 @@ struct Game {
 	Unit *unit_new (uint8_t x, uint8_t y, uint8_t type, uint8_t player_id );
 	void  unit_remove(Unit *u);
 
+    void eliminate_player(int player_id);
+
 	void harvest(); // harvest for current player
 
     /* updates info about terrain under mouse_cursor
@@ -72,6 +74,12 @@ struct Game {
     inline int cursor_position (void) {
         return (cursor.y/16)*SCREEN_W + cursor.x/16;
     }
+
+    int step; // scenario special steps / actions. originally 100*level.
+    /*  extra scenario steps
+    Called each selection / action turn of the player.
+    */
+    void action();
 };
 
 extern Game game_info;

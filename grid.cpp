@@ -95,7 +95,11 @@ void Grid::color_units(void)
 {
 	clear();
 	for ( Unit *u = game_info.myunits(0) ; u ; u=game_info.myunits(u) ) {
-		m_data[u->y/16-1] |= 1<<(u->x/16);
+		if (!u->moved()) {
+			message("non moved : %x is OK %d \n",u->line, !!(*u));
+			u->info();
+			m_data[u->y/16-1] |= 1<<(u->x/16);
+		}
 	}
 }
 

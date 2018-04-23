@@ -16,7 +16,7 @@ tile2terrain = {
 
 colors   = 'blue red yellow green'.split()
 units    = 'farmer farmer_f soldier soldier_f archer guard guard2 catapult belier tower horse knight boat flag'.split() # in order horizontally
-cursors  = 'cursor cursor2 left right down up'.split()
+cursors  = 'cursor cursor2 left right down up skull cross'.split()
 flags    = 'flag1 flag2 flag3 flag4 flag5'.split()
 
 resources = 'food gold wood stone'.split()
@@ -53,16 +53,20 @@ def damage(of,to) :
 	mtype=unit_type(to)
 	of = of.rsplit('_',1)[0] # removes _f
 	att = {
-		('soldier','foot') : 3,
-		('soldier','wheels') : 3,
-		('soldier','horse') : 3,
-		('soldier','boat') : 3,
+		('soldier','default') : 3,
 
 		('archer','foot') : 5,
+		('archer','default') : 4,
+
 		('boat','boat') : 3,
+
 		('guard','foot') : 6,
+
+		('catapult','default') : 4,
+		('catapult','flag') : 100,
 	}
-	return att.get((of,mtype),ATTACK_DEFAULT)
+
+	return att.get((of,mtype),att.get((of,'default'),ATTACK_DEFAULT))
 
 def unit_attack_range(u) :
 	u2 = u.split('_')[0]
@@ -124,6 +128,7 @@ for l in tmx.findall('layer') :
 		d['intro'] = intro_elt.get('value') or intro_elt.text if intro_elt is not None else None
 		level_list.append(d)
 
+anim_cross_fall = [64-i*i/4 for i in range(15,0,-1)]+[64-i*i/4 for i in range(16)]
 
 # === EXPORT ================================================================
 
@@ -134,6 +139,8 @@ print('#include "data.h"')
 print('#ifndef DEFS_DEFINITION')
 print('#define DEFS_DEFINITION')
 
+# -- table
+print ('extern const uint8_t anim_cross_fall[%d]; // pixels above target def, per frame '%len(anim_cross_fall))
 # -- terrains
 print("enum {")
 for t in terrains :
@@ -228,6 +235,11 @@ print('#endif\n')
 # - Implementation ----------------------
 
 print('#ifdef DEFS_IMPLEMENTATION')
+
+# -- tables
+print ('const uint8_t anim_cross_fall[%d] = {'%len(anim_cross_fall));
+print ('   ',','.join("%d"%x for x in anim_cross_fall))
+print ('};')
 
 # tile -> terrain
 cnt = int(tsx.get('tilecount'))

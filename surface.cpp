@@ -1,7 +1,8 @@
 /* blitter object : 2bpp surface, non clipped.
 
- layout : data : 4x4 interleaved couples palette (aa,ab,ac,ad,ba,...) , then 2bpp pixels
-
+ layout :
+ 	data : 4x4 interleaved couples palette (aa,ab,ac,ad,ba,...) , then 2bpp pixels
+ 	a,b,c,d : unused.
  */
 #include "surface.h"
 
@@ -87,15 +88,18 @@ int Surface::chr (const char c, int x, int y, const void *fontdata)
 	const uint8_t ch = (uint8_t)c-' ';
 	const int cw = font->char_width[ch];
 	for (int j=0;j<font->height;j++) {
-		const uint8_t *cp = &font->data[(ch*font->height + j)*font->bytes_per_line]; // source word address
+		const uint32_t *cp = (uint32_t *)&font->data[(ch*font->height + j)*font->bytes_per_line]; // source word address
+		uint32_t src_pixels = *cp; //read them
+		src_pixels &= 0xffffffff >> (8*(4-font->bytes_per_line)); // mask source : only read bpl pixels
 		uint32_t *dst = (uint32_t *)&p[(w/4)*(y+j)+x/4]; // existing word, byte aligned
-		uint32_t pw = *dst; // read existing pixels
-		// pw &= 0xffffffff << (cw*2); // fixme mask it - or not if transparent render ?
-		pw |= *(uint32_t *)cp << ((x%4)*2); // read 32 bits, shift them right
+		uint32_t pw = *dst; // read existing pixels. at most 32bits so 16pixels wide
+		//pw &= 0xffffffff << (cw*2); // mask it - or not if transparent render ?
+		pw |= src_pixels << ((x%4)*2); // read 32 bits, shift them left (ie pixels to right) to the right place
 		*dst = pw; // write it back
 	}
 	return cw;
 }
+
 
 // opaque text, non wrapped, non clipped.
 void Surface::text (const char *text, int x, int y,const void *fontdata)
@@ -112,13 +116,15 @@ void Surface::text (const char *text, int x, int y,const void *fontdata)
 			y += font->height+1;
 			cx = x;
 		} else if (*c=='\t') {
-			cx = (cx+48)/48*48;
+			cx = (cx+32)/32*32;
+		} else if (*c==' ') {
+			cx += 2;
 		} else {
 			if (cx>w-4) {
 				y+=font->height+1;
 				cx=x;
 			}
-			cx += chr(*c, cx, y, fontdata);
+			cx += chr(*c, cx, y, fontdata)+1;
 		}
 	}
 }

@@ -105,8 +105,17 @@ int menu (const char *choices[], int nb_choices, int x,int y)
 }
 
 
-void text (int x, int y, const char *txt) // add optional face / expression
+// face_id <0 -> no face
+void text (const char *txt, int face_id, enum Face_State st)
 {
+    const int x=100, y=20;
+
+    if (face_id>=0) {
+        game_info.face.x = 100;
+        game_info.face.y = 30;
+        game_info.face.h = 26;
+    }
+
     // appears from top
     object border, bullet;
     sprite3_load(&border, SPRITE(text_border));
@@ -116,7 +125,7 @@ void text (int x, int y, const char *txt) // add optional face / expression
 
     surf.setpalette (surface_pal);
 
-    surf.text(txt,0,0,data_font_fon);
+    surf.text(txt,0,0,data_font_mini_fon);
     blitter_insert(&surf, x+24,y+29 ,1);
     blitter_insert(&border,    x,y  ,1);
     blitter_insert(&bullet,x+120,y+164,0);
@@ -124,16 +133,21 @@ void text (int x, int y, const char *txt) // add optional face / expression
     // blink bullet
     while (! gamepad_pressed()) {
         bullet.fr = bullet_animation[(vga_frame/16)%4];
+        if (face_id>=0) {
+            game_info.face.fr = (vga_frame/32)%2 ? game_info.face_frame(face_id,st) : game_info.face_frame(face_id,face_idle);
+        }
         wait_vsync();
     }
 
     blitter_remove(&border);
     blitter_remove(&surf);
     blitter_remove(&bullet);
+
+    game_info.draw_hud(); // set face back
 }
 
 static const char *bg_menu[]={
-    "\x7f Help","\x80 Options","\x81 Save","\x82 End turn"
+    "\x7f  Help","\x80  Options","\x81  Save","\x82  End turn"
 };
 
 Unit* select_unit( void )
@@ -265,8 +279,6 @@ Unit * select_attack_target()
 
 }
 
-
-
 void human_game_turn()
 {
     char path[MAX_PATH]; // merge & remove ?
@@ -285,6 +297,8 @@ void human_game_turn()
     game_info.harvest();
 
     while (1) {
+        game_info.action();
+
         Unit *selected = select_unit();
 
         if (game_info.finished_turn)
@@ -305,7 +319,6 @@ void human_game_turn()
         selected->moveto(path);
 
         // Action menu for post-move actions (Attack)
-
         game_info.get_possible_targets(*selected);
 
         static const char *menu_attack[]={"\x84 Attack","\x83 Wait","\x82 Cancel"};
@@ -346,4 +359,5 @@ void human_game_turn()
 
     }
     message("- End of turn\n");
+    game_info.grid.clear(); // clear units left to play
 }

@@ -18,6 +18,11 @@ extern "C" {
 
 #define SZ(x) (sizeof(x)/sizeof(x[0]))// size of array
 
+// flags
+#define FLAG_INTRO
+#define FLAG_NEXTPLAYER_ANIM
+#define FLAG_WALK_ANIMATION
+
 enum Player_type_enum {
     player_notused,
     player_human,
@@ -35,25 +40,10 @@ enum Face_State {
     face_NB
 };
 
-// Map
-/*
-TODO : map 0..N (id):
-    icone/nom pour choix menu
-    type : 2P, 3P, 4P -> deduit
-    campaign
-    triggers : conditions -> 1 bitmap de conditions, un callback qui verifie et s'execute eventuellement, appelé a chaque tour - pas chaque frame)
-        ou un gros ? si reuse
-        faire un tableau depuis maps
-        victory conditions
+int menu (const char *choices[], int nb_choices, int x,int y);
+void text (const char *txt, int face_id=-1, enum Face_State st=face_talk);
 
-    initial pos players, initial resources
-    intro eventuelle : ds trigger_fn
-
-    map_get_terrain(position u16)
-    map_get
-*/
-
-void load_map (int map_id); // (re) load map background
+void wait_vsync(int);
 
 #define GAMEPAD_DIRECTIONS (gamepad_up|gamepad_down|gamepad_left|gamepad_right)
 uint16_t gamepad_pressed(void);

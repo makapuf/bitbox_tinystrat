@@ -9,6 +9,7 @@ extern "C" {
 
 typedef uint32_t couple_t;
 
+// size of the buffer needed by a surface of w by h pixels
 #define SURFACE_BUFSZ(w,h) ( (w+15)/16*4*h + 16*sizeof(couple_t) )
 
 struct Surface : public object

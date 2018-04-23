@@ -91,8 +91,7 @@ uint16_t gamepad_pressed(void)
 
 void intro()
 {
-    for (int i=0;i<15;i++)
-        wait_vsync(); // little pause
+    wait_vsync(15); // little pause
 
     object bg;
     object horse_l, horse_r, obj_l, obj_r, tiny, wars;
@@ -117,32 +116,25 @@ void intro()
         wait_vsync();
     }
 
-    for (int i=0;i<15;i++)
-        wait_vsync();
+    wait_vsync(15);
 
     blitter_insert(&horse_l, 0,     50,10);
-    for (int i=0;i<15;i++)
-        wait_vsync();
+    wait_vsync(15);
     blitter_insert(&horse_r, 330,  50,10);
-    for (int i=0;i<15;i++)
-        wait_vsync();
+    wait_vsync(15);
     blitter_insert(&obj_l,  0,  30,7);
-    for (int i=0;i<15;i++)
-        wait_vsync();
+    wait_vsync(15);
     blitter_insert(&obj_r,330,  30,7);
-    for (int i=0;i<15;i++)
-        wait_vsync();
+    wait_vsync(15);
 
     blitter_insert(&tiny, -16,140,10);
-    for (int i=0;i<30;i++)
-        wait_vsync();
+    wait_vsync(30);
     for (int i=0;i<50;i++) {
         tiny.x += 4;
         wait_vsync();
     }
 
-    for (int i=0;i<40;i++)
-        wait_vsync();
+    wait_vsync(40);
 
     blitter_insert(&wars, 20,-200,10);
     while (!GAMEPAD_PRESSED(0,start)) {
@@ -175,13 +167,11 @@ void intro()
     message("End of intro.\n");
 }
 
-int menu (const char *choices[], int nb_choices, int x,int y);
 
 // main_menu : new game, about, ... + menus
 int main_menu()
 {
-    for (int i=0;i<15;i++)
-        wait_vsync(); // little pause
+    wait_vsync(15);
 
     object bg;
     sprite3_load(&bg, SPRITE(main_menu));
@@ -218,22 +208,33 @@ int main_menu()
 }
 
 
+void wait_vsync(int n)
+{
+    for (int i=0;i<n;i++) wait_vsync();
+}
+
+void debug_text();
+
 extern "C" {
     void bitbox_main()
     {
+        #ifdef FLAG_INTRO
+        intro();
+        #endif
 
-        // intro();
         while (1) {
             int level= main_menu();
 
-            // fixme select parameters ...
+            // fixme select game parameters ...
 
             game_info.init();
 
             game_info.start_level(level);
             do {
                 game_info.draw_hud();
+                #ifdef FLAG_NEXTPLAYER_ANIM
                 game_info.ready_animation();
+                #endif
                 switch (game_info.player_type[game_info.current_player]) {
                     case player_human : human_game_turn(); break;
                     case player_cpu0  : play_CPU(); break;

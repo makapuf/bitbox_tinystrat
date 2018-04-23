@@ -4,43 +4,6 @@
 #include "unit.h"
 #include "game.h"
 
-static const int8_t neighbours[]={
-	+1,-1,
-	+SCREEN_W, -SCREEN_W,
-	SCREEN_W+1,SCREEN_W-1,
-	-SCREEN_W+1,-SCREEN_W-1
-};
-
-
-void find_next_best_dummy(int &npos, Unit * &nunit)
-{
-	// find an enemy player in range, go towards it
-
-	nunit=nullptr; // by default dont attack
-
-	// all units not mine
-	for (int tgt_unit=0;tgt_unit<MAX_UNITS;tgt_unit++) {
-		Unit &tgt = game_info.units[tgt_unit];
-		if (!tgt || tgt.player() == game_info.current_player)
-			continue;
-
-		int pos = tgt.position();
-
-		// find free neighbour place
-		for (int n=0;n<8;n++) {
-			const int dest = pos+neighbours[n];
-			// fixme not if range is not 1!
-			// not if cannot attack !
-
-			if (!cell_isempty(cost_array[dest]) && game_info.unit_at(dest)==nullptr) {
-				npos  = dest;
-				nunit = &tgt;
-				return;
-			}
-		}
-	}
-}
-
 // best action by heuristic
 // updates target, pos
 void find_next_best(Unit &u, int &npos, Unit * &target)

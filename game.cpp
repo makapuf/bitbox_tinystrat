@@ -9,8 +9,6 @@ extern "C" {
 #include "lib/blitter/blitter.h"
 }
 
-void text(int x, int y, const char *txt);
-
 // find ID of unit at this screen position, or -1 if not found
 Unit *Game::unit_at(int pos)
 {
@@ -54,7 +52,7 @@ void Game::unit_remove(Unit *u)
     for (int i=0;i<MAX_UNITS;i++)
         if (&units[i]==u) {
             blitter_remove(u);
-            units[i].line = 0;
+            units[i].line = nullptr;
             break;
         }
 }
@@ -63,6 +61,9 @@ void Game::next_player()
 {
     int next=current_player;
     while (1) {
+        if (next==0)
+            game_info.day++;
+
         next = (next+1)%4;
         if (player_type[next]!=player_notused && player_type[next]!=player_off)
             break;
@@ -71,6 +72,7 @@ void Game::next_player()
         finished_game = true;
     else
         current_player = next;
+    message("Now it's day %d player %d turn\n",day,next);
 }
 
 void Game::ready_animation()
@@ -158,10 +160,8 @@ void Game::load_units()
 
         if (!unit[2]) {// no type defined : set as not used
             units[i].line = nullptr;
-//        } else if (unit[2]==16) {
-            // special : flag
+//        } else if (unit[2]==16) { // special : flag
         } else {
-            message("unit %d\n",unit[2]);
             unit_new(unit[0],unit[1],unit[2]-1,unit[3]);
             player_type[unit[3]] = unit[3]==0 ? player_human : player_cpu0;
             //player_type[unit[3]] = player_cpu0;
@@ -173,6 +173,7 @@ void Game::load_units()
 void Game::start_level(int _level)
 {
     level=_level;
+    day=0;
     message ("starting level %d \n",level);
 
     load_mod(&data_song_mod);
@@ -180,7 +181,7 @@ void Game::start_level(int _level)
     load_units(); // also sets player type
     grid.show();
 
-    text (100,20,level_info[level].intro);
+    step = level*100;
     finished_game = false;
 }
 
@@ -303,7 +304,7 @@ void Game::update_cursor_info(void)
 Unit *Game::myunits ( Unit *from )
 {
     for (Unit *u = from ? from+1 : &units[0] ; u != &units[MAX_UNITS] ; u++) {
-        if (!!u && u->player() == current_player)
+        if (!!(*u) && u->player() == current_player)
             return u;
     }
     return nullptr;
@@ -330,12 +331,14 @@ static uint8_t find_next_anim_tile(uint8_t tile_id)
 void Game::bg_frame()
 {
     // update one unit per frame (fixme not constant..)
-    Unit &u = units[vga_frame%MAX_UNITS];
-    if (u.type() == unit_flag) {
-        u.fr = u.fr/8*8 + (u.fr+1)%6;
+    for (int i=0;i<2;i++) {
+        Unit &u = units[vga_frame%(MAX_UNITS/2)*2+i];
+        if (u.type() == unit_flag) {
+            u.fr = u.fr/8*8 + (u.fr%8+1)%5;
+        }
     }
 
-    // update one line per frame
+    // update around one line per frame
     const int line = vga_frame%32;
     if (line==0 || line>=SCREEN_H) return;
 
@@ -343,5 +346,129 @@ void Game::bg_frame()
     {
         uint8_t next=find_next_anim_tile(vram[i]);
         if (next) vram[i] = next;
+    }
+}
+
+void Game::eliminate_player(int player_id)
+{
+    message ("eliminate player %d !!\n",player_id);
+    // fixme make a moving panel ? music 
+
+    face.fr = face_frame(player_id, face_sad2); // anims ?
+
+    // remove all units of this player
+    for (int i=0;i<MAX_UNITS;i++) {
+        Unit *u = &units[i];
+        if (!!*u && u->player() == player_id) {
+            u->die();
+        }
+    }
+
+    player_type[player_id] = player_notused;
+
+    // only one player ? end of game !
+    int nb_players = 0;
+    for (int i=0;i<4;i++) {
+        if (player_type[i] != player_notused)
+            nb_players++;
+    }
+
+    if (nb_players<=1) { // end game
+        message("End of Game !\n");
+        // fixme animation, music ...
+        finished_game = true;
+    }
+}
+
+
+/*  extra scenario steps
+    Called each selection / action turn of the player.
+ */
+void Game::action()
+{
+    message("Processing step %d\n",step);
+    switch(step)
+    {
+
+        // tutorial 1
+        case 0 :
+            text("Please:\nclick on a unit with button A, then\nclick on a destination with button A,\nthen order it to wait.",0);
+            step ++;
+            break;
+        case 1 : // after first move
+            // detect if one has been moved
+            for (Unit *u=myunits(0);u;u=myunits(u)) {
+                if (u->moved()) {
+                    text("Very nice.\nNow move all of your farmers towards the fields.",0);
+                    step++;
+                    break;
+                }
+            }
+            break;
+        case 2: // wait for all moved.
+            step = 3;
+
+            // already ended a day ? quick path to step 3
+            if (day>=1) break;
+
+            for (Unit *u=myunits(0);u;u=myunits(u)) {
+                if (!u->moved()) {
+                    step=2;
+                    break;
+                }
+            }
+            if (step==3) {
+                text("Well done.\nNow you can end your turn by\nselecting the background,\npress A\nand select ... end turn.",0);
+            }
+            break;
+
+        case 3: // wait for next day
+            if (day>=1) {
+                text("OK nice.\nNow send your farmers to the fields.",0);
+                step++;
+            }
+            break;
+
+        case 4: // wait for at least one farmer on the field, start attacking
+            for (Unit *u=myunits(0);u;u=myunits(u)) {
+                if (u->terrain() == terrain_fields) {
+                    text("Ah well,\n we can start gathering food now.",0);
+                    text("Aha !\nWhat do you think you're doing !\nThose fields are mine since last year!\n",2);
+                    text("What ?\nThose were never yours !\nWe'll harvest those as sure as we did plant them !",0);
+                    text("Ah yes ? Well they're mine now !\nYou better get your people off those fields fast !",2);
+                    // load new units
+                    wait_vsync(60);
+                    for (int i=0;i<3;i++) {
+                        unit_new (15, 2+i, unit_soldier, 2 );
+                        wait_vsync(60);
+                    }
+                    text("Hm, we'd better defend those lands.\nFortunately, some of our soldiers were around.\nWe'll send them to you and you will be able to attack them.",0);
+                    text("Just move them next to the soldiers to start attacking.",0);
+                    // load new units
+                    for (int i=0;i<9;i++) {
+                        wait_vsync(30);
+                        unit_new (20+i%3, 15+i/3, unit_soldier, 0 );
+                    }
+                    step++;
+                    break;
+                }
+            }
+            break;
+
+        case 5:
+            /* nothing, wait for all soldiers to be eliminated.
+             then congratulate, bring back farmers, make other guy pest
+             and declare victory !
+             */
+            break;
+
+        case 100 :
+        case 200 :
+        case 300 :
+            break; // do nothing
+
+        default :
+            message("Error : step no known");
+            break; // do nothing
     }
 }

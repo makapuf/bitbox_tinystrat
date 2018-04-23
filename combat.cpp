@@ -70,7 +70,7 @@ struct Opponent {
         face.h  = 26;
     }
 
-    ~Opponent()
+    void remove()
     {
         blitter_remove(&bg);
         blitter_remove(&sprite);
@@ -169,6 +169,9 @@ void combat (Unit &attacking, Unit &attacked)
         wait_vsync();
     }
 
+    op_att.remove();
+    op_def.remove();
+
     // show all units again
     for (int i=0;i<MAX_UNITS;i++) {
         Unit &u = game_info.units[i];
@@ -177,14 +180,13 @@ void combat (Unit &attacking, Unit &attacked)
 
     // small anims on board if any unit just died
     if (attacked.health()==0) {
-        // set frame to explosion
-        game_info.unit_remove(&attacked);
+        attacked.die();
     }
     if (attacking.health()==0) {
-        game_info.unit_remove(&attacking);
+        attacking.die();
     }
+
 
     game_info.cursor.y -= 1024; // show cursor
     mod_jumpto(songorder_song);
-
 }
