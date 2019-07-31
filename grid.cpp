@@ -58,9 +58,9 @@ void Grid::grid_line (struct object *o)
 	// squares
 
 	for (int i=0;i<SCREEN_W;i++) {
-		uint16_t color = (i+y/16)%2 ? o->a >>16 : o->a&0x7fff;
+		pixel_t color = (i+y/16)%2 ? o->a >>16 : o->a&0x7fff;
 		if (data[y/16] & (1<<i)) {
-			uint16_t *firstpixel = &draw_buffer[o->x+i*16];
+			pixel_t *firstpixel = &draw_buffer[o->x+i*16];
 
 			// draw bottom only if none after
 			if (y%16==0 || ( y%16==15 && ! (data[y/16+1] & (1<<(i))))) {

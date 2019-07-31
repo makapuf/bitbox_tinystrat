@@ -51,6 +51,7 @@ static uint16_t ram_palette[256*2];
 // fade to black a palette from a reference palette. value =0 means full black
 void palette_fade(int palette_sz, object *ob, uint16_t *src_palette, uint8_t value)
 {
+#if VGA_BPP==16
     uint16_t *dst = (uint16_t*)ob->b;
     for (int i=0;i<palette_sz*2;i++) {
         // split into RGB u8
@@ -62,6 +63,7 @@ void palette_fade(int palette_sz, object *ob, uint16_t *src_palette, uint8_t val
         // reassemble
         dst[i] = r<<10 | g << 5 | b;
     }
+#endif
 }
 
 // gamepad 0 button pressed this frame ?

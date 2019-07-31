@@ -72,6 +72,7 @@ void Game::next_player()
         finished_game = true;
     else
         current_player = next;
+    cursor_color();
     message("Now it's day %d player %d turn\n",day,next);
 }
 
@@ -119,7 +120,7 @@ void Game::init()
     tilemap_init (&map,
         &data_tiles_bg[ 4 ], // no palette
         0,0,
-        TMAP_HEADER(SCREEN_W,SCREEN_H,TSET_16,TMAP_U16),
+        TMAP_HEADER(SCREEN_W,SCREEN_H,TSET_16,TMAP_U8) | TSET_8bit,
         vram
     );
 
@@ -149,7 +150,7 @@ void Game::load_map() {
     );
 
     // copy background from first level over
-    memcpy( vram, &data_map [MAP_HEADER_SZ], SCREEN_W*2 );
+    memcpy( vram, &data_map [MAP_HEADER_SZ], SCREEN_W );
 }
 
 void Game::load_units()
@@ -183,6 +184,9 @@ void Game::start_level(int _level)
 
     step = level*100;
     finished_game = false;
+
+    current_player = 0;
+    cursor_color();
 }
 
 void Game::get_possible_targets(Unit &attacking)

@@ -22,7 +22,7 @@ GAME_C_FILES = main.cpp pathfinding.cpp player.cpp game.cpp grid.cpp ai.cpp comb
 	sdk/lib/blitter/blitter_surface.c \
 	sdk/lib/mod/mod32.c
 
-DEFINES = VGA_MODE=400 VGA_BPP=16 MOD_CHANNELS=6
+DEFINES = VGA_MODE=400 VGA_BPP=8 MOD_CHANNELS=6
 
 # graphical scripts path
 GRSCRIPTS = sdk/lib/blitter/scripts
@@ -38,13 +38,16 @@ data.h: $(BINARY_FILES)
 	python3 sfont.py $^
 
 %.h %.tset : %.tsx %.png
-	$(GRSCRIPTS)/mk_tset.py $< > $*.h
+	$(GRSCRIPTS)/mk_tset.py $< -p MICRO > $*.h
 
 %.h %.map : %.tmx
-	$(GRSCRIPTS)/mk_tmap.py -f u16 $< > $*.h
+	$(GRSCRIPTS)/mk_tmap.py $< > $*.h
 
 %.spr : %.png
-	$(GRSCRIPTS)/mk_spr.py $< -p COUPLES -o $*.spr
+	$(GRSCRIPTS)/mk_spr.py $< -p MICRO -o $*.spr
+
+sprites/units_16x16.spr: sprites/units_16x16.png
+	$(GRSCRIPTS)/mk_spr.py $< -p COUPLES -o $@
 
 palettes.bin : sprites/units_16x16.spr
 	python3 mk_pals.py

@@ -26,7 +26,7 @@ struct Game {
     // global info
     Unit units[MAX_UNITS];      // frame as unit type, set line=0 if not used. palette as player+aleady moved (faded)
 
-    uint16_t vram[SCREEN_W*SCREEN_H]; // map
+    uint8_t vram[SCREEN_W*SCREEN_H]; // map
 
     object map;		// BG
     object cursor;
@@ -37,6 +37,10 @@ struct Game {
     // temp for current targets -> use a next_target() method ?
     Unit *targets[8];
     int nbtargets;
+
+    // set cursor_color
+    void cursor_color () { cursor.b = (uintptr_t) &data_palettes_bin[ 512*current_player ]; }
+
 
     Unit *unit_at(int pos);
 	Unit *unit_new (uint8_t x, uint8_t y, uint8_t type, uint8_t player_id );

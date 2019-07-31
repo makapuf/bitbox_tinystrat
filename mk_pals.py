@@ -5,11 +5,11 @@ import xml.etree.ElementTree as ET
 from PIL import Image
 import sys
 
-DEBUG=True
+DEBUG=False
 
 sys.path.append('sdk/lib/blitter/scripts')
 from spr2png import Sprite
-from utils import rgba2u16
+from utils import rgba2u8
 colors = Image.open('colors.png').load()
 
 # load palette from original sprite
@@ -44,9 +44,9 @@ if DEBUG :
 	dpal.putdata(newpal[0]+newpal[1]+newpal[2]+newpal[3]+newpal[4]+newpal[5]+newpal[6]+newpal[7])
 	dpal.save('_debug.png')
 
-# save palettes as colors to .pal file containting 4+4 palettes of 256 couples of 2 bytes/color each.
+# save palettes as colors to .pal file containting 4+4 palettes of 256 couples of 1 byte/color each = 8*256=2k
 of = open('palettes.bin','wb')
 for p in newpal :
 	for c in p :
-		u16 = rgba2u16(*c)
-		of.write(bytes([u16&0xff, u16>>8]))
+		u8 = rgba2u8(*c)
+		of.write(bytes((u8,)))
