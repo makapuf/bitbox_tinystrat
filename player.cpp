@@ -6,7 +6,6 @@
 extern "C" {
 #include "sdk/lib/blitter/blitter.h" // object
 }
-#include "surface.h"
 
 void move_cursor(uint16_t gamepad_pressed)
 {
@@ -44,15 +43,16 @@ static const uint8_t bullet_animation[] = {
 // returns a choice between 0 and nb_choices-1 or -1 to cancel
 int menu (const char *choices[], int nb_choices, int x,int y)
 {
-    object menu, bullet;
-    Surface surf { 80, 123, &surface_data };
+    object menu, bullet, surf;
 
     sprite3_load(&menu  , SPRITE(menu_border));
     sprite3_load(&bullet, SPRITE(misc_16x16));
-    surf.setpalette (surface_pal);
+
+    surface_init (&surf, 80,123,&surface_data);
+    surface_setpalette (&surf,surface_pal);
 
     for (int i=0;i<nb_choices;i++) {
-        surf.text(choices[i],0,16*i,data_font_fon);
+        surface_text(&surf, choices[i],0,16*i,data_font_fon);
     }
 
     blitter_insert(&surf, x+16,y+8,5);
@@ -117,15 +117,16 @@ void text (const char *txt, int face_id, enum Face_State st)
     }
 
     // appears from top
-    object border, bullet;
+    object border, bullet, surf;
     sprite3_load(&border, SPRITE(text_border));
     sprite3_load(&bullet, SPRITE(misc_16x16));
 
-    Surface surf { 128, 128, &surface_data };
+    surface_init(&surf, 128, 128, &surface_data );
 
-    surf.setpalette (surface_pal);
+    surface_setpalette (&surf,surface_pal);
 
-    surf.text(txt,0,0,data_font_mini_fon);
+    surface_text(&surf,txt,0,0,data_font_mini_fon);
+
     blitter_insert(&surf, x+24,y+29 ,1);
     blitter_insert(&border,    x,y  ,1);
     blitter_insert(&bullet,x+120,y+164,0);

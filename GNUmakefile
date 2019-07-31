@@ -15,11 +15,11 @@ BINARY_FILES := tiles_bg.tset map.map palettes.bin song.mod font.fon font_mini.f
 	$(SPRITES:%=sprites/%.spr)
 
 GAME_C_FILES = main.cpp pathfinding.cpp player.cpp game.cpp grid.cpp ai.cpp combat.cpp unit.cpp\
-	surface.cpp \
 	implems.c \
 	sdk/lib/blitter/blitter.c \
 	sdk/lib/blitter/blitter_tmap.c \
 	sdk/lib/blitter/blitter_sprites3.c \
+	sdk/lib/blitter/blitter_surface.c \
 	sdk/lib/mod/mod32.c
 
 DEFINES = VGA_MODE=400 VGA_BPP=16 MOD_CHANNELS=6

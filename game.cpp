@@ -30,7 +30,7 @@ Unit *Game::unit_new (uint8_t x, uint8_t y, uint8_t type, uint8_t player_id )
     }
     if (uid==MAX_UNITS) {
         message ("no more free units\n");
-        die(2,1);
+        bitbox_die(2,1);
     }
 
     // allocate sprite
