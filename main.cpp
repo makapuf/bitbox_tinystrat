@@ -46,21 +46,22 @@ int8_t sinus(int x)
         return -sine_table[63-x];
 }
 
-static uint16_t ram_palette[256*2];
+static pixel_t ram_palette[256*sizeof(pixel_t)*2];
 
 // fade to black a palette from a reference palette. value =0 means full black
 void palette_fade(int palette_sz, object *ob, uint16_t *src_palette, uint8_t value)
 {
-    uint16_t *dst = (uint16_t*)ob->b;
+    pixel_t *dst = (pixel_t*)ob->b;
     for (int i=0;i<palette_sz*2;i++) {
         // split into RGB u8
         uint16_t c = src_palette[i];
-        unsigned int r = ((c>>10) & 31) * value / 256;
-        unsigned int g = ((c>> 5) & 31) * value / 256;
-        unsigned int b = ((c>> 0) & 31) * value / 256;
+
+        unsigned int r = ((c>>10) & 31) * value / 32;
+        unsigned int g = ((c>> 5) & 31) * value / 32;
+        unsigned int b = ((c>> 0) & 31) * value / 32;
 
         // reassemble
-        dst[i] = r<<10 | g << 5 | b;
+        dst[i] = RGB(r,g,b);
     }
 }
 
@@ -106,18 +107,16 @@ void intro()
 
     blitter_insert(&bg, 0,0,200);
 
-#if VGA_BPP==16
     // replace with ram palette
-    uint16_t *src_pal = (uint16_t*) bg.b; // in rom
+    uint16_t *src_pal = (uint16_t*) bg.b; // in rom : this is a 16bpp palette
     bg.b = (uintptr_t) ram_palette;
 
     // fade-in palette
     #define BGPAL 64 // couples
-    for (int i=0;i<255;i+=3) {
+    for (int i=0;i<255;i+=8) {
         palette_fade(BGPAL, &bg, src_pal, i);
         wait_vsync();
     }
-#endif 
 
     wait_vsync(15);
 
@@ -148,9 +147,8 @@ void intro()
         wait_vsync();
     }
 
-#if VGA_BPP==16
     // fade out bg & remove
-    for (int i=0;i<255;i+=4) {
+    for (int i=0;i<256;i+=4) {
         wars.y -= 16;
         // FIXME CLIPPING
         // tiny->x += 8;
@@ -159,7 +157,6 @@ void intro()
         palette_fade(BGPAL, &bg, src_pal, 255-i);
         wait_vsync();
     }
-#endif 
 
     blitter_remove(&bg);
     blitter_remove(&wars);
@@ -182,7 +179,6 @@ int main_menu()
     sprite3_load(&bg, SPRITE(main_menu));
     blitter_insert(&bg, 0,0,200);
 
-#if VGA_BPP==16
     // replace with ram palette
     uint16_t *src_pal = (uint16_t*) bg.b; // in rom
     bg.b = (uintptr_t) ram_palette;
@@ -192,7 +188,6 @@ int main_menu()
         palette_fade(255, &bg, src_pal, i);
         wait_vsync();
     }
-#endif
 
     // wait keypress
     const char * choices[NB_LEVELS];
@@ -204,13 +199,11 @@ int main_menu()
         lvl = menu (choices, NB_LEVELS, 256,80);
     } while (lvl==-1);
 
-#if VGA_BPP==16
     // fade-out palette
     for (int i=0;i<128;i+=4) {
         palette_fade(255, &bg, src_pal, 255-i*2);
         wait_vsync();
     }
-#endif
 
     blitter_remove(&bg);
     return lvl;

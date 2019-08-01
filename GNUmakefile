@@ -49,8 +49,15 @@ font_mini.fon: $(GRSCRIPTS)/font_mini.png
 %.spr : %.png
 	$(GRSCRIPTS)/mk_spr.py $< -p MICRO -o $*.spr
 
+# Those need couples palettes
 sprites/units_16x16.spr: sprites/units_16x16.png
 	$(GRSCRIPTS)/mk_spr.py $< -p COUPLES -o $@
+
+sprites/intro_bg.spr: sprites/intro_bg.png
+	$(GRSCRIPTS)/mk_spr.py $< -p COUPLES -o $@ 
+
+sprites/main_menu.spr: sprites/main_menu.png
+	$(GRSCRIPTS)/mk_spr.py $< -p COUPLES -o $@ 
 
 palettes.bin : sprites/units_16x16.spr
 	python3 mk_pals.py
