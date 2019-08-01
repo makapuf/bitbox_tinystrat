@@ -51,7 +51,6 @@ static uint16_t ram_palette[256*2];
 // fade to black a palette from a reference palette. value =0 means full black
 void palette_fade(int palette_sz, object *ob, uint16_t *src_palette, uint8_t value)
 {
-#if VGA_BPP==16
     uint16_t *dst = (uint16_t*)ob->b;
     for (int i=0;i<palette_sz*2;i++) {
         // split into RGB u8
@@ -63,7 +62,6 @@ void palette_fade(int palette_sz, object *ob, uint16_t *src_palette, uint8_t val
         // reassemble
         dst[i] = r<<10 | g << 5 | b;
     }
-#endif
 }
 
 // gamepad 0 button pressed this frame ?
@@ -106,17 +104,20 @@ void intro()
     sprite3_load(&tiny,    SPRITE(intro_tiny));
     sprite3_load(&wars,    SPRITE(intro_wars));
 
-    #define BGPAL 64 // couples
+    blitter_insert(&bg, 0,0,200);
+
+#if VGA_BPP==16
     // replace with ram palette
     uint16_t *src_pal = (uint16_t*) bg.b; // in rom
     bg.b = (uintptr_t) ram_palette;
-    blitter_insert(&bg, 0,0,200);
 
     // fade-in palette
+    #define BGPAL 64 // couples
     for (int i=0;i<255;i+=3) {
         palette_fade(BGPAL, &bg, src_pal, i);
         wait_vsync();
     }
+#endif 
 
     wait_vsync(15);
 
@@ -147,6 +148,7 @@ void intro()
         wait_vsync();
     }
 
+#if VGA_BPP==16
     // fade out bg & remove
     for (int i=0;i<255;i+=4) {
         wars.y -= 16;
@@ -157,6 +159,7 @@ void intro()
         palette_fade(BGPAL, &bg, src_pal, 255-i);
         wait_vsync();
     }
+#endif 
 
     blitter_remove(&bg);
     blitter_remove(&wars);
@@ -179,6 +182,7 @@ int main_menu()
     sprite3_load(&bg, SPRITE(main_menu));
     blitter_insert(&bg, 0,0,200);
 
+#if VGA_BPP==16
     // replace with ram palette
     uint16_t *src_pal = (uint16_t*) bg.b; // in rom
     bg.b = (uintptr_t) ram_palette;
@@ -188,6 +192,7 @@ int main_menu()
         palette_fade(255, &bg, src_pal, i);
         wait_vsync();
     }
+#endif
 
     // wait keypress
     const char * choices[NB_LEVELS];
@@ -199,11 +204,13 @@ int main_menu()
         lvl = menu (choices, NB_LEVELS, 256,80);
     } while (lvl==-1);
 
+#if VGA_BPP==16
     // fade-out palette
     for (int i=0;i<128;i+=4) {
         palette_fade(255, &bg, src_pal, 255-i*2);
         wait_vsync();
     }
+#endif
 
     blitter_remove(&bg);
     return lvl;
