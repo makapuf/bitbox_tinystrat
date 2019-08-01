@@ -34,8 +34,11 @@ data.h: $(BINARY_FILES)
 
 -include sdk/kernel/bitbox.mk
 
+font_mini.fon: $(GRSCRIPTS)/font_mini.png
+	python3 $(GRSCRIPTS)/mk_font.py $^ $@
+
 %.fon: %.png
-	python3 sfont.py $^
+	python3 $(GRSCRIPTS)/mk_font.py $^ $*.fon
 
 %.h %.tset : %.tsx %.png
 	$(GRSCRIPTS)/mk_tset.py $< -p MICRO > $*.h
@@ -62,6 +65,6 @@ clean::
 	rm -f defs.h $(NAME)_sdl
 
 clean_assets:
-	rm -f tiles_bg.tset tiles_bg.h map.map map.h palettes.bin _debug.png
+	rm -f tiles_bg.tset tiles_bg.h map.map map.h palettes.bin _debug.png *.fon
 	rm -f $(SPRITES:%=sprites/%.spr)
 	rm -f palettes.bin data.h
