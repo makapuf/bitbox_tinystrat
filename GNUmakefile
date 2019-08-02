@@ -22,7 +22,7 @@ GAME_C_FILES = main.cpp pathfinding.cpp player.cpp game.cpp grid.cpp ai.cpp comb
 	sdk/lib/blitter/blitter_surface.c \
 	sdk/lib/mod/mod32.c
 
-DEFINES = VGA_MODE=400 VGA_BPP=8 MOD_CHANNELS=6
+DEFINES = VGA_MODE=400 VGA_BPP=8 MOD_CHANNELS=6 BLITTER_NO_SOLID_SPRITES
 
 # graphical scripts path
 GRSCRIPTS = sdk/lib/blitter/scripts
