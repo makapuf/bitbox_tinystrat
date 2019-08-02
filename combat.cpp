@@ -48,7 +48,9 @@ struct Opponent {
         const uint8_t terrain = unit.terrain();
         const uint8_t player  = unit.player();
 
-        sprite3_load(&bg,terrain_bg_table[terrain]);
+        sd_load(terrain_bg_table[terrain],left);
+
+        sprite3_load(&bg,memory[left]);
         sprite3_load(&sprite, SPRITE(units_16x16));
 
         blitter_insert(&bg,     left ? 0   : 200, left?-200:300,35);

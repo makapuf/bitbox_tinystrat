@@ -2,14 +2,15 @@ NAME := tinystrat
 
 all: data.h
 
-COLORS := blue red yellow green
 TERRAINS :=  mountains forest town fields stable sea beach \
 	castle camp road plain river
-INTRO := tiny bg horse_left horse_right objects_left objects_right wars
+INTRO := tiny horse_left horse_right objects_left objects_right 
 
 SPRITES := units_16x16 misc_16x16 faces_26x26 fight_200x200 bignum_16x24 \
-	next_player main_menu menu_border text_border \
-	$(TERRAINS:%=bg_%) $(INTRO:%=intro_%)
+	next_player menu_border text_border \
+	$(INTRO:%=intro_%)
+
+FILES = intro_bg.spr intro_wars.spr main_menu.spr $(TERRAINS:%=bg_%.spr) 
 
 BINARY_FILES := tiles_bg.tset map.map palettes.bin song.mod font.fon font_mini.fon\
 	$(SPRITES:%=sprites/%.spr)
@@ -23,11 +24,16 @@ GAME_C_FILES = main.cpp pathfinding.cpp player.cpp game.cpp grid.cpp ai.cpp comb
 	sdk/lib/mod/mod32.c
 
 DEFINES = VGA_MODE=400 VGA_BPP=8 MOD_CHANNELS=6 BLITTER_NO_SOLID_SPRITES
+USE_SDCARD:=yes
 
 # graphical scripts path
 GRSCRIPTS = sdk/lib/blitter/scripts
 
-main.cpp: data.h defs.h
+main.cpp: data.h defs.h $(FILES:%=$(NAME)/%)
+
+$(NAME)/% : sprites/%
+	@mkdir -p $(NAME)
+	mv $^ $@
 
 data.h: $(BINARY_FILES)
 	sdk/lib/resources/embed.py  $^ -r spr map tset> $@
@@ -75,3 +81,4 @@ clean_assets:
 	rm -f tiles_bg.tset tiles_bg.h map.map map.h palettes.bin _debug.png *.fon
 	rm -f $(SPRITES:%=sprites/%.spr)
 	rm -f palettes.bin data.h
+	rm -rf $(NAME)

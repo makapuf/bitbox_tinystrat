@@ -270,7 +270,7 @@ print('};')
 # terrain backgrounds
 print("const char *terrain_bg_table[] = {")
 for t in terrains :
-	print("    [terrain_%s] = data_bg_%s,"%(t,t))
+	print("    [terrain_%s] = \"bg_%s.spr\","%(t,t))
 print("};")
 
 # terrain/unit movement cost

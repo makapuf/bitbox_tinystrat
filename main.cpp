@@ -5,6 +5,7 @@ extern "C" {
 #include "bitbox.h"
 #include "lib/blitter/blitter.h"
 #include "lib/mod/mod32.h"
+#include "fatfs/ff.h"
 }
 
 #include "data.h" // palette
@@ -20,11 +21,16 @@ extern "C" {
 #define SFX_VOLUME 64
 #define SFX_NOTE    214
 
+// Globals 
+uint8_t memory[2][16384];
+Game game_info;
+static pixel_t ram_palette[256*sizeof(pixel_t)*2];
+
+
 void play_sfx(int sample_id) {
     mod_play_note(sample_id,SFX_CHANNEL,SFX_VOLUME,SFX_NOTE);
 }
 
-Game game_info;
 
 // sine, -128:128 with angle from 0 to 64
 int8_t sinus(int x)
@@ -46,7 +52,6 @@ int8_t sinus(int x)
         return -sine_table[63-x];
 }
 
-static pixel_t ram_palette[256*sizeof(pixel_t)*2];
 
 // fade to black a palette from a reference palette. value =0 means full black
 void palette_fade(int palette_sz, object *ob, uint16_t *src_palette, uint8_t value)
@@ -90,6 +95,32 @@ uint16_t gamepad_pressed(void)
     return pressed;
 }
 
+void sd_init() {
+    // init fatfs
+    static FATFS fatfs;
+    if (f_mount(&fatfs,"",1)) {
+        message("Could not mount sd card\n");
+        bitbox_die(7,7);
+    }
+    f_chdir("tinystrat");
+}
+
+void sd_load(const char *filename, int slot)
+{
+    FIL file;
+    size_t read;
+
+    int err = f_open (&file, filename,FA_READ);
+    if (err) {
+        message("could not open file %s: %d !\n",filename,err);
+    } else {
+        f_read (&file, memory[slot], sizeof(memory) , &read); // can be two slots on slot one. in any case, don't half-load.
+        message("read file %s, %d bytes\n", filename, read);
+        f_close(&file);
+    }
+}
+
+
 void intro()
 {
     wait_vsync(15); // little pause
@@ -97,13 +128,17 @@ void intro()
     object bg;
     object horse_l, horse_r, obj_l, obj_r, tiny, wars;
 
-    sprite3_load(&bg, SPRITE(intro_bg));
+    sd_load("intro_bg.spr",0);
+    sd_load("intro_wars.spr",1);
+
+    sprite3_load(&bg, memory[0]);
+    sprite3_load(&wars, memory[1]);
+
     sprite3_load(&horse_l, SPRITE(intro_horse_left));
     sprite3_load(&horse_r, SPRITE(intro_horse_right));
     sprite3_load(&obj_l,   SPRITE(intro_objects_left));
     sprite3_load(&obj_r,   SPRITE(intro_objects_right));
     sprite3_load(&tiny,    SPRITE(intro_tiny));
-    sprite3_load(&wars,    SPRITE(intro_wars));
 
     blitter_insert(&bg, 0,0,200);
 
@@ -176,7 +211,8 @@ int main_menu()
     wait_vsync(15);
 
     object bg;
-    sprite3_load(&bg, SPRITE(main_menu));
+    sd_load("main_menu.spr",0); // two slots ! 
+    sprite3_load(&bg, memory[0]);
     blitter_insert(&bg, 0,0,200);
 
     // replace with ram palette
@@ -220,6 +256,8 @@ void debug_text();
 extern "C" {
     void bitbox_main()
     {
+        sd_init();
+
         #ifdef FLAG_INTRO
         intro();
         #endif

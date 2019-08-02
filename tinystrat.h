@@ -79,3 +79,5 @@ void reconstruct_path(int dst, char *path);
 #define songorder_next 7
 
 void play_sfx(int sample_id);
+void sd_load(const char *filename, int slot);
+extern uint8_t memory[2][16384];
