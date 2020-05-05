@@ -1,5 +1,5 @@
 // Units
-#include <stdlib.h> // abs
+#include <cstdlib> // abs
 #pragma once
 
 #include "data.h" // palettes

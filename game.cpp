@@ -140,6 +140,7 @@ void Game::init()
     blitter_insert(&face,0,-6,0);
 }
 
+// the size in a tmap file of the header, allowing a direct copy 
 #define MAP_HEADER_SZ 8
 
 void Game::load_map() {
@@ -187,6 +188,8 @@ void Game::start_level(int _level)
 
     current_player = 0;
     cursor_color();
+
+    text(level_info[level].intro);
 }
 
 void Game::get_possible_targets(Unit &attacking)

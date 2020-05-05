@@ -28,6 +28,7 @@ int Unit::can_harvest() const
     return -1;
 }
 
+
 void Unit::moveto(const char *path)
 {
     // animate move to dest
@@ -51,6 +52,7 @@ void Unit::moveto(const char *path)
     // reset to rest frame
     fr &= ~7;
 }
+
 
 void Unit::die() {
     message ("unit died\n");

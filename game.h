@@ -7,83 +7,86 @@
 
 struct Game {
 	uint8_t map_id;
-    uint8_t level; // current level
-    int day;
-    bool finished_game;
-    bool finished_turn;
+	uint8_t level; // current level
+	int day;
+	bool finished_game;
+	bool finished_turn;
 
-    uint8_t current_player; // 0-3
+	uint8_t current_player; // 0-3
 
-    Unit *cursor_unit;  // ref to object under cursor, <0 : None
+	Unit *cursor_unit;  // ref to object under cursor, <0 : None
 
-    // per player info
-    uint8_t player_type[4]; // replace with fnpointer ?
-    uint8_t player_avatar[4];
+	// per player info
+	uint8_t player_type[4]; // replace with fnpointer ?
+	uint8_t player_avatar[4];
 
-    uint8_t resources[4][4]; // per color / resource id
-    object  flag[4]; // main base
+	uint8_t resources[4][4]; // per color / resource id
+	object  flag[4]; // main base
 
-    // global info
-    Unit units[MAX_UNITS];      // frame as unit type, set line=0 if not used. palette as player+aleady moved (faded)
+	// global info
+	Unit units[MAX_UNITS];  // frame used as as unit type, set line=0 if not used. palette as player+aleady moved (faded)
+	
+	uint8_t vram[SCREEN_W*SCREEN_H]; // map
 
-    uint8_t vram[SCREEN_W*SCREEN_H]; // map
+	object map;		// BG
+	object cursor;
+	object face;    // for avatar : player
 
-    object map;		// BG
-    object cursor;
-    object face;       // for avatar : player
+	Grid grid;
 
-    Grid grid;
+	// temp for current targets -> use a next_target() method ?
+	Unit *targets[8];
+	int nbtargets;
 
-    // temp for current targets -> use a next_target() method ?
-    Unit *targets[8];
-    int nbtargets;
+	// set cursor_color
+	void cursor_color () { 
+		cursor.b = (uintptr_t) &data_palettes_bin[ 512*current_player ]; 
+	}
 
-    // set cursor_color
-    void cursor_color () { cursor.b = (uintptr_t) &data_palettes_bin[ 512*current_player ]; }
-
-
-    Unit *unit_at(int pos);
+	Unit *unit_at(int pos);
 	Unit *unit_new (uint8_t x, uint8_t y, uint8_t type, uint8_t player_id );
 	void  unit_remove(Unit *u);
 
-    void eliminate_player(int player_id);
+	void eliminate_player(int player_id);
 
 	void harvest(); // harvest for current player
 
-    /* updates info about terrain under mouse_cursor
-       returns the unit under mouse_cursor if any or NULL
-       */
-    void update_cursor_info(void);
+	/* updates info about terrain under mouse_cursor
+	   returns the unit under mouse_cursor if any or NULL
+	   */
+	void update_cursor_info(void);
 
 	void init();
 	void next_player();
 	void start_level(int level);
 	void leave_level();
-    void load_map();
-    void load_units(); // also declares which player is what
+	void load_map();
+	void load_units(); // also declares which player is what
 
 	void get_possible_targets(Unit &attacking);
 
-	int face_frame(int player, enum Face_State st) { return player_avatar[player]*face_NB+st; }
+	int face_frame(int player, enum Face_State st) { 
+		return player_avatar[player]*face_NB+st; 
+	}
 	void ready_animation();
 	void draw_hud();
 
-    void bg_frame();
+	void bg_frame();
 
-    // gets next unit of mine starting from this one, or first if 'from' is null
-    // returns nullptr if none found
-    Unit *myunits ( Unit *from );
+	// gets next unit of mine starting from this one, or first if 'from' is null
+	// returns nullptr if none found
+	Unit *myunits ( Unit *from );
 
-    // get cursor position on tilemap
-    inline int cursor_position (void) {
-        return (cursor.y/16)*SCREEN_W + cursor.x/16;
-    }
+	// get cursor position on tilemap
+	inline int cursor_position (void) {
+		return (cursor.y/16)*SCREEN_W + cursor.x/16;
+	}
 
-    int step; // scenario special steps / actions. originally 100*level.
-    /*  extra scenario steps
-    Called each selection / action turn of the player.
-    */
-    void action();
+	int step; // scenario special steps / actions. originally 100*level.
+	/*  extra scenario steps
+	Called each selection / action turn of the player.
+	*/
+	void action();
 };
 
 extern Game game_info;

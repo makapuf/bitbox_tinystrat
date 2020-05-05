@@ -19,7 +19,7 @@ extern "C" {
 #define SZ(x) (sizeof(x)/sizeof(x[0]))// size of array
 
 // flags
-#define FLAG_INTRO
+//#define FLAG_INTRO
 #define FLAG_NEXTPLAYER_ANIM
 #define FLAG_WALK_ANIMATION
 
